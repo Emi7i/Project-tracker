@@ -49,7 +49,7 @@ def project_list(request):
         # Group by status
         status_dict = dict(Project.STATUS_CHOICES)
         for value, label in Project.STATUS_CHOICES + [(None, 'auto')]:
-            group_projects = [p for p in projects if p.manual_status == value]
+            group_projects = [p for p in projects if p.status == value]
             if group_projects:
                 grouped_projects.append({
                     'group_label': label,
@@ -57,9 +57,8 @@ def project_list(request):
                     'projects': group_projects
                 })
     elif group_by == 'priority':
-        # Group by priority
-        priority_dict = dict(Project.PRIORITY_CHOICES)
-        for value, label in Project.PRIORITY_CHOICES:
+        # Group by priority (in order of urgency - reverse of defined order)
+        for value, label in reversed(Project.PRIORITY_CHOICES):
             group_projects = [p for p in projects if p.priority == value]
             if group_projects:
                 grouped_projects.append({
