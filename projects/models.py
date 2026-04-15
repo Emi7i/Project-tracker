@@ -2,33 +2,66 @@ from django.db import models
 from django.utils import timezone
 
 
-class Project(models.Model):
-    PROJECT_TYPES = [
-        ('corporate', 'Corporate'),
-        ('personal', 'Personal'),
-    ]
-    
-    STATUS_CHOICES = [
-        ('ongoing', 'Ongoing'),
-        ('ontrack', 'On Track'),
-        ('atrisk', 'At Risk'),
-        ('overdue', 'Overdue'),
-    ]
-    
-    PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
-        ('urgent', 'Urgent'),
-    ]
+class Profile(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        # Ensure only one profile is active
+        if self.is_active:
+            Profile.objects.filter(is_active=True).update(is_active=False)
+        super().save(*args, **kwargs)
+
+
+class TypeDefinition(models.Model):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='type_definitions')
+    name = models.CharField(max_length=50)
+    color = models.CharField(max_length=7, default='#BA7517')
+    order = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['order']
+
+
+class StatusDefinition(models.Model):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='status_definitions')
+    name = models.CharField(max_length=50)
+    order = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['order']
+
+
+class PriorityDefinition(models.Model):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='priority_definitions')
+    name = models.CharField(max_length=50)
+    order = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['order']
+
+
+class Project(models.Model):
     name = models.CharField(max_length=200)
-    project_type = models.CharField(max_length=20, choices=PROJECT_TYPES, default='corporate')
+    project_type = models.CharField(max_length=20, default='corporate')
     due_date = models.DateField(null=True, blank=True)
     next_action = models.CharField(max_length=500, blank=True)
     order = models.IntegerField(default=0)
-    manual_status = models.CharField(max_length=20, choices=STATUS_CHOICES, null=True, blank=True)
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    manual_status = models.CharField(max_length=20, null=True, blank=True)
+    priority = models.CharField(max_length=20, default='medium')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -55,7 +88,17 @@ class Project(models.Model):
 
     @property
     def status_label(self):
-        labels = dict(Project.STATUS_CHOICES)
+        active_profile = Profile.objects.filter(is_active=True).first()
+        if active_profile and self.manual_status:
+            status_def = active_profile.status_definitions.filter(name__iexact=self.manual_status).first()
+            if status_def:
+                return status_def.name.title()
+        labels = {
+            'ongoing': 'Ongoing',
+            'ontrack': 'On Track',
+            'atrisk': 'At Risk',
+            'overdue': 'Overdue',
+        }
         return labels.get(self.status, '')
 
     @property
@@ -83,4 +126,24 @@ class Project(models.Model):
 
     @property
     def dot_color(self):
+        active_profile = Profile.objects.filter(is_active=True).first()
+        if active_profile and self.project_type:
+            type_def = active_profile.type_definitions.filter(name__iexact=self.project_type).first()
+            if type_def:
+                return type_def.color
         return '#BA7517' if self.project_type == 'corporate' else '#1D9E75'
+
+    @property
+    def get_priority_display(self):
+        active_profile = Profile.objects.filter(is_active=True).first()
+        if active_profile and self.priority:
+            priority_def = active_profile.priority_definitions.filter(name__iexact=self.priority).first()
+            if priority_def:
+                return priority_def.name.title()
+        labels = {
+            'low': 'Low',
+            'medium': 'Medium',
+            'high': 'High',
+            'urgent': 'Urgent',
+        }
+        return labels.get(self.priority, 'Medium')

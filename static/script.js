@@ -188,6 +188,485 @@ async function swapTypeOrder() {
     }
 }
 
+// Settings modal functions
+function openSettings() {
+    const modal = document.getElementById('settings-modal');
+    modal.style.display = 'flex';
+    
+    // Load settings content
+    fetch('/settings/')
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('settings-content').innerHTML = html;
+        });
+}
+
+function closeSettings() {
+    const modal = document.getElementById('settings-modal');
+    modal.style.display = 'none';
+}
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        // Add click listener to content box to prevent modal closing
+        const contentBox = modal.querySelector('div');
+        if (contentBox) {
+            contentBox.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+        
+        modal.addEventListener('click', function(e) {
+            // Only close if clicking directly on the modal overlay (background)
+            if (e.target === modal) {
+                closeSettings();
+            }
+        });
+    }
+});
+
+// Settings functions
+function getCsrfToken() {
+    return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+}
+
+function createProfile() {
+    const name = document.getElementById('new-profile-name').value.trim();
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    formData.append('name', name);
+    
+    fetch('/settings/create-profile/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                    // Re-attach content box click listener
+                    const modal = document.getElementById('settings-modal');
+                    const contentBox = modal.querySelector('div');
+                    if (contentBox) {
+                        contentBox.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                        });
+                    }
+                });
+        } else {
+            alert(result.error || 'Failed to create profile');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating profile:', error);
+        alert('Error creating profile: ' + error.message);
+    });
+}
+
+function activateProfile(profileId) {
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch(`/settings/activate-profile/${profileId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to activate profile');
+        }
+    })
+    .catch(error => {
+        console.error('Error activating profile:', error);
+        alert('Error activating profile: ' + error.message);
+    });
+}
+
+function deleteProfile(profileId) {
+    if (!confirm('Are you sure you want to delete this profile?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch(`/settings/delete-profile/${profileId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to delete profile');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting profile:', error);
+        alert('Error deleting profile: ' + error.message);
+    });
+}
+
+function createTypeDefinition(profileId) {
+    const name = document.getElementById(`type-name-${profileId}`).value.trim();
+    const color = document.getElementById(`type-color-${profileId}`).value;
+    
+    if (!name) {
+        alert('Please enter name');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    formData.append('profile_id', profileId);
+    formData.append('name', name);
+    formData.append('color', color);
+    
+    fetch('/settings/create-type-definition/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to create type definition');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating type definition:', error);
+        alert('Error creating type definition: ' + error.message);
+    });
+}
+
+function createStatusDefinition(profileId) {
+    const name = document.getElementById(`status-name-${profileId}`).value.trim();
+    
+    if (!name) {
+        alert('Please enter name');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    formData.append('profile_id', profileId);
+    formData.append('name', name);
+    
+    fetch('/settings/create-status-definition/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to create status definition');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating status definition:', error);
+        alert('Error creating status definition: ' + error.message);
+    });
+}
+
+function createPriorityDefinition(profileId) {
+    const name = document.getElementById(`priority-name-${profileId}`).value.trim();
+    
+    if (!name) {
+        alert('Please enter name');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    formData.append('profile_id', profileId);
+    formData.append('name', name);
+    
+    fetch('/settings/create-priority-definition/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to create priority definition');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating priority definition:', error);
+        alert('Error creating priority definition: ' + error.message);
+    });
+}
+
+function deleteTypeDefinition(defId) {
+    if (!confirm('Are you sure you want to delete this type?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch(`/settings/delete-type-definition/${defId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to delete type definition');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting type definition:', error);
+        alert('Error deleting type definition: ' + error.message);
+    });
+}
+
+function deleteStatusDefinition(defId) {
+    if (!confirm('Are you sure you want to delete this status?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch(`/settings/delete-status-definition/${defId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to delete status definition');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting status definition:', error);
+        alert('Error deleting status definition: ' + error.message);
+    });
+}
+
+function deletePriorityDefinition(defId) {
+    if (!confirm('Are you sure you want to delete this priority?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
+    
+    fetch(`/settings/delete-priority-definition/${defId}/`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            // Reload settings content instead of full page
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                });
+        } else {
+            alert(result.error || 'Failed to delete priority definition');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting priority definition:', error);
+        alert('Error deleting priority definition: ' + error.message);
+    });
+}
+
+// Reordering functionality
+let draggedDefinitionItem = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize drag and drop for reorderable items
+    document.addEventListener('dragstart', function(e) {
+        if (e.target.classList.contains('reorderable-item')) {
+            draggedDefinitionItem = e.target;
+            e.target.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+        }
+    });
+    
+    document.addEventListener('dragend', function(e) {
+        if (e.target.classList.contains('reorderable-item')) {
+            e.target.style.opacity = '1';
+            draggedDefinitionItem = null;
+        }
+    });
+    
+    document.addEventListener('dragover', function(e) {
+        if (e.target.classList.contains('reorderable-item') && draggedDefinitionItem) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+    });
+    
+    document.addEventListener('drop', function(e) {
+        if (e.target.classList.contains('reorderable-item') && draggedDefinitionItem) {
+            e.preventDefault();
+            
+            // Get the parent container
+            const container = draggedDefinitionItem.parentElement;
+            const type = draggedDefinitionItem.dataset.type;
+            const profileId = draggedDefinitionItem.dataset.profile;
+            
+            // Reorder the items
+            const items = Array.from(container.querySelectorAll('.reorderable-item'));
+            const fromIndex = items.indexOf(draggedDefinitionItem);
+            const toIndex = items.indexOf(e.target);
+            
+            if (fromIndex !== toIndex) {
+                // Reorder in DOM
+                if (fromIndex < toIndex) {
+                    container.insertBefore(draggedDefinitionItem, e.target.nextSibling);
+                } else {
+                    container.insertBefore(draggedDefinitionItem, e.target);
+                }
+                
+                // Update order on server
+                const newOrder = Array.from(container.querySelectorAll('.reorderable-item')).map(item => item.dataset.id);
+                
+                let endpoint;
+                if (type === 'type') {
+                    endpoint = '/settings/reorder-type-definitions/';
+                } else if (type === 'status') {
+                    endpoint = '/settings/reorder-status-definitions/';
+                } else if (type === 'priority') {
+                    endpoint = '/settings/reorder-priority-definitions/';
+                }
+                
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', getCsrfToken());
+                formData.append('order', JSON.stringify(newOrder));
+                
+                fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    if (!result.success) {
+                        alert(result.error || 'Failed to reorder');
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error reordering:', error);
+                    alert('Error reordering: ' + error.message);
+                    location.reload();
+                });
+            }
+        }
+    });
+});
+
 // Drag and drop functionality
 const projectList = document.getElementById('project-list');
 

@@ -1,13 +1,17 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Project
+from django.db import models
+from .models import Project, Profile, TypeDefinition, StatusDefinition, PriorityDefinition
 
 
 def project_list(request):
     sort_by = request.session.get('sort_by', 'custom')
     group_by = request.session.get('group_by', 'none')
     type_swap = request.session.get('type_swap', False)  # False = corporate first, True = personal first
+    
+    # Get active profile
+    active_profile = Profile.objects.filter(is_active=True).first()
     
     if sort_by == 'status':
         projects = list(Project.objects.all().order_by('manual_status', 'order'))
@@ -21,8 +25,13 @@ def project_list(request):
     
     overdue_count = sum(1 for p in projects if p.status == 'overdue')
     
-    status_options = Project.STATUS_CHOICES + [(None, 'auto')]
-    priority_options = Project.PRIORITY_CHOICES
+    # Get status and priority options from active profile or fallback to defaults
+    if active_profile:
+        status_options = [(s.name.lower(), s.name.title()) for s in active_profile.status_definitions.all()] + [(None, 'auto')]
+        priority_options = [(p.name.lower(), p.name.title()) for p in active_profile.priority_definitions.all()]
+    else:
+        status_options = [('ongoing', 'Ongoing'), ('ontrack', 'On Track'), ('atrisk', 'At Risk'), ('overdue', 'Overdue'), (None, 'auto')]
+        priority_options = [('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('urgent', 'Urgent')]
     
     sort_options = [
         ('custom', 'Custom'),
@@ -47,8 +56,8 @@ def project_list(request):
     grouped_projects = []
     if group_by == 'status':
         # Group by status
-        status_dict = dict(Project.STATUS_CHOICES)
-        for value, label in Project.STATUS_CHOICES + [(None, 'auto')]:
+        status_dict = dict(status_options)
+        for value, label in status_options:
             group_projects = [p for p in projects if p.manual_status == value]
             if group_projects:
                 grouped_projects.append({
@@ -58,8 +67,8 @@ def project_list(request):
                 })
     elif group_by == 'priority':
         # Group by priority
-        priority_dict = dict(Project.PRIORITY_CHOICES)
-        for value, label in Project.PRIORITY_CHOICES:
+        priority_dict = dict(priority_options)
+        for value, label in priority_options:
             group_projects = [p for p in projects if p.priority == value]
             if group_projects:
                 grouped_projects.append({
@@ -95,6 +104,7 @@ def project_list(request):
         'current_group': group_by,
         'current_group_label': group_label,
         'type_swap': type_swap,
+        'active_profile': active_profile,
     }
     return render(request, 'projects/index.html', context)
 
@@ -125,6 +135,178 @@ def swap_type_order(request):
         request.session['type_swap'] = not current_swap
         return JsonResponse({'success': True})
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+
+def settings_view(request):
+    profiles = Profile.objects.all()
+    return render(request, 'projects/settings.html', {'profiles': profiles})
+
+
+@csrf_exempt
+def create_profile(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        
+        # Generate default name if not provided
+        if not name:
+            profile_count = Profile.objects.count()
+            name = f'Profile{profile_count + 1}'
+        
+        profile = Profile.objects.create(name=name, is_active=False)
+        return JsonResponse({'success': True, 'profile_id': profile.id})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def activate_profile(request, profile_id):
+    if request.method == 'POST':
+        profile = get_object_or_404(Profile, id=profile_id)
+        profile.is_active = True
+        profile.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def delete_profile(request, profile_id):
+    if request.method == 'POST':
+        profile = get_object_or_404(Profile, id=profile_id)
+        profile.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def create_type_definition(request):
+    if request.method == 'POST':
+        profile_id = request.POST.get('profile_id')
+        name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', '#BA7517')
+        
+        if not profile_id or not name:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        profile = get_object_or_404(Profile, id=profile_id)
+        # Get the next order value
+        max_order = profile.type_definitions.aggregate(models.Max('order'))['order__max'] or 0
+        TypeDefinition.objects.create(profile=profile, name=name, color=color, order=max_order + 1)
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def create_status_definition(request):
+    if request.method == 'POST':
+        profile_id = request.POST.get('profile_id')
+        name = request.POST.get('name', '').strip()
+        
+        if not profile_id or not name:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        profile = get_object_or_404(Profile, id=profile_id)
+        # Get the next order value
+        max_order = profile.status_definitions.aggregate(models.Max('order'))['order__max'] or 0
+        StatusDefinition.objects.create(profile=profile, name=name, order=max_order + 1)
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def create_priority_definition(request):
+    if request.method == 'POST':
+        profile_id = request.POST.get('profile_id')
+        name = request.POST.get('name', '').strip()
+        
+        if not profile_id or not name:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        profile = get_object_or_404(Profile, id=profile_id)
+        # Get the next order value
+        max_order = profile.priority_definitions.aggregate(models.Max('order'))['order__max'] or 0
+        PriorityDefinition.objects.create(profile=profile, name=name, order=max_order + 1)
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def reorder_type_definitions(request):
+    if request.method == 'POST':
+        order_data = request.POST.get('order', '')
+        if not order_data:
+            return JsonResponse({'error': 'No order data provided'}, status=400)
+        
+        try:
+            import json
+            order_list = json.loads(order_data)
+            for index, def_id in enumerate(order_list):
+                TypeDefinition.objects.filter(id=def_id).update(order=index)
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def reorder_status_definitions(request):
+    if request.method == 'POST':
+        order_data = request.POST.get('order', '')
+        if not order_data:
+            return JsonResponse({'error': 'No order data provided'}, status=400)
+        
+        try:
+            import json
+            order_list = json.loads(order_data)
+            for index, def_id in enumerate(order_list):
+                StatusDefinition.objects.filter(id=def_id).update(order=index)
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def reorder_priority_definitions(request):
+    if request.method == 'POST':
+        order_data = request.POST.get('order', '')
+        if not order_data:
+            return JsonResponse({'error': 'No order data provided'}, status=400)
+        
+        try:
+            import json
+            order_list = json.loads(order_data)
+            for index, def_id in enumerate(order_list):
+                PriorityDefinition.objects.filter(id=def_id).update(order=index)
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def delete_type_definition(request, def_id):
+    if request.method == 'POST':
+        type_def = get_object_or_404(TypeDefinition, id=def_id)
+        type_def.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def delete_status_definition(request, def_id):
+    if request.method == 'POST':
+        status_def = get_object_or_404(StatusDefinition, id=def_id)
+        status_def.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def delete_priority_definition(request, def_id):
+    if request.method == 'POST':
+        priority_def = get_object_or_404(PriorityDefinition, id=def_id)
+        priority_def.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 def project_create(request):

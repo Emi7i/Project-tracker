@@ -1,0 +1,80 @@
+{% load static %}
+<div>
+    <div style="margin-bottom: 1.5rem;">
+        <h3 style="margin: 0 0 1rem 0; font-size: 16px;">Profiles</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 1rem;">
+            <input type="text" id="new-profile-name" placeholder="New profile name (optional)" style="padding: 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); flex: 1;">
+            <button onclick="createProfile()" style="padding: 8px 16px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer;">Create Profile</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for profile in profiles %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary);">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-weight: 500;">{{ profile.name }}</span>
+                        {% if profile.is_active %}
+                            <span style="font-size: 12px; padding: 2px 8px; background: #1D9E75; color: white; border-radius: var(--border-radius-sm);">Active</span>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        {% if not profile.is_active %}
+                            <button onclick="event.stopPropagation(); activateProfile({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Activate</button>
+                        {% endif %}
+                        <button onclick="event.stopPropagation(); deleteProfile({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-size: 12px;">Delete</button>
+                    </div>
+                </div>
+                <div id="profile-details-{{ profile.id }}" style="margin-left: 16px; margin-top: 8px;">
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 14px;">Types</h4>
+                        <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                            <input type="text" id="type-name-{{ profile.id }}" placeholder="Name" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); flex: 1;">
+                            <input type="color" id="type-color-{{ profile.id }}" value="#BA7517" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); width: 50px;">
+                            <button onclick="event.stopPropagation(); createTypeDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
+                        </div>
+                        <div id="type-list-{{ profile.id }}" style="display: flex; flex-direction: column; gap: 4px;">
+                            {% for type_def in profile.type_definitions.all %}
+                                <div class="reorderable-item" data-id="{{ type_def.id }}" data-type="type" data-profile="{{ profile.id }}" style="display: flex; align-items: center; gap: 8px; padding: 6px; background: var(--color-background-primary); border-radius: var(--border-radius-sm); border: 0.5px solid var(--color-border-tertiary); cursor: move;">
+                                    <i class="fa-solid fa-grip-vertical" style="color: var(--color-text-tertiary);"></i>
+                                    <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: {{ type_def.color }}"></span>
+                                    <span style="flex: 1;">{{ type_def.name }}</span>
+                                    <button onclick="event.stopPropagation(); deleteTypeDefinition({{ type_def.id }})" style="padding: 4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-sm); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-size: 10px;">×</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 14px;">Statuses</h4>
+                        <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                            <input type="text" id="status-name-{{ profile.id }}" placeholder="Name" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); flex: 1;">
+                            <button onclick="event.stopPropagation(); createStatusDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
+                        </div>
+                        <div id="status-list-{{ profile.id }}" style="display: flex; flex-direction: column; gap: 4px;">
+                            {% for status_def in profile.status_definitions.all %}
+                                <div class="reorderable-item" data-id="{{ status_def.id }}" data-type="status" data-profile="{{ profile.id }}" style="display: flex; align-items: center; gap: 8px; padding: 6px; background: var(--color-background-primary); border-radius: var(--border-radius-sm); border: 0.5px solid var(--color-border-tertiary); cursor: move;">
+                                    <i class="fa-solid fa-grip-vertical" style="color: var(--color-text-tertiary);"></i>
+                                    <span style="flex: 1;">{{ status_def.name }}</span>
+                                    <button onclick="event.stopPropagation(); deleteStatusDefinition({{ status_def.id }})" style="padding: 4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-sm); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-size: 10px;">×</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 14px;">Priorities</h4>
+                        <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                            <input type="text" id="priority-name-{{ profile.id }}" placeholder="Name" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); flex: 1;">
+                            <button onclick="event.stopPropagation(); createPriorityDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
+                        </div>
+                        <div id="priority-list-{{ profile.id }}" style="display: flex; flex-direction: column; gap: 4px;">
+                            {% for priority_def in profile.priority_definitions.all %}
+                                <div class="reorderable-item" data-id="{{ priority_def.id }}" data-type="priority" data-profile="{{ profile.id }}" style="display: flex; align-items: center; gap: 8px; padding: 6px; background: var(--color-background-primary); border-radius: var(--border-radius-sm); border: 0.5px solid var(--color-border-tertiary); cursor: move;">
+                                    <i class="fa-solid fa-grip-vertical" style="color: var(--color-text-tertiary);"></i>
+                                    <span style="flex: 1;">{{ priority_def.name }}</span>
+                                    <button onclick="event.stopPropagation(); deletePriorityDefinition({{ priority_def.id }})" style="padding: 4px 8px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-sm); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-size: 10px;">×</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
