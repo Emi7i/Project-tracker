@@ -8,7 +8,7 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
             {% for profile in profiles %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary);">
+                <div onclick="toggleProfileDetails({{ profile.id }})" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); cursor: pointer;">
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <span style="font-weight: 500;">{{ profile.name }}</span>
                         {% if profile.is_active %}
@@ -22,13 +22,13 @@
                         <button onclick="event.stopPropagation(); deleteProfile({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-secondary); cursor: pointer; font-size: 12px;">Delete</button>
                     </div>
                 </div>
-                <div id="profile-details-{{ profile.id }}" style="margin-left: 16px; margin-top: 8px;">
+                <div id="profile-details-{{ profile.id }}" style="margin-left: 16px; margin-top: 8px; display: none;">
                     <div style="margin-bottom: 1rem;">
                         <h4 style="margin: 0 0 0.5rem 0; font-size: 14px;">Types</h4>
                         <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                             <input type="text" id="type-name-{{ profile.id }}" placeholder="Name" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); flex: 1;">
                             <input type="color" id="type-color-{{ profile.id }}" value="#BA7517" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); width: 50px;">
-                            <button onclick="event.stopPropagation(); createTypeDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
+                            <button onclick="event.stopPropagation(); event.preventDefault(); createTypeDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
                         </div>
                         <div id="type-list-{{ profile.id }}" style="display: flex; flex-direction: column; gap: 4px;">
                             {% for type_def in profile.type_definitions.all %}
@@ -45,7 +45,7 @@
                         <h4 style="margin: 0 0 0.5rem 0; font-size: 14px;">Statuses</h4>
                         <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                             <input type="text" id="status-name-{{ profile.id }}" placeholder="Name" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); flex: 1;">
-                            <button onclick="event.stopPropagation(); createStatusDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
+                            <button onclick="event.stopPropagation(); event.preventDefault(); createStatusDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
                         </div>
                         <div id="status-list-{{ profile.id }}" style="display: flex; flex-direction: column; gap: 4px;">
                             {% for status_def in profile.status_definitions.all %}
@@ -61,7 +61,7 @@
                         <h4 style="margin: 0 0 0.5rem 0; font-size: 14px;">Priorities</h4>
                         <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                             <input type="text" id="priority-name-{{ profile.id }}" placeholder="Name" style="padding: 6px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); flex: 1;">
-                            <button onclick="event.stopPropagation(); createPriorityDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
+                            <button onclick="event.stopPropagation(); event.preventDefault(); createPriorityDefinition({{ profile.id }})" style="padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; font-size: 12px;">Add</button>
                         </div>
                         <div id="priority-list-{{ profile.id }}" style="display: flex; flex-direction: column; gap: 4px;">
                             {% for priority_def in profile.priority_definitions.all %}

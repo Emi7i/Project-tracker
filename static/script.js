@@ -232,6 +232,13 @@ function getCsrfToken() {
     return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
 }
 
+function toggleProfileDetails(profileId) {
+    const details = document.getElementById(`profile-details-${profileId}`);
+    if (details) {
+        details.style.display = details.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
 function createProfile() {
     const name = document.getElementById('new-profile-name').value.trim();
     
@@ -291,12 +298,8 @@ function activateProfile(profileId) {
     })
     .then(result => {
         if (result.success) {
-            // Reload settings content instead of full page
-            fetch('/settings/')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('settings-content').innerHTML = html;
-                });
+            // Reload the main page to apply the new profile
+            window.location.reload();
         } else {
             alert(result.error || 'Failed to activate profile');
         }

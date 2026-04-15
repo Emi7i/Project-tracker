@@ -152,7 +152,9 @@ def create_profile(request):
             profile_count = Profile.objects.count()
             name = f'Profile{profile_count + 1}'
         
-        profile = Profile.objects.create(name=name, is_active=False)
+        # Make the first profile automatically active
+        is_first = Profile.objects.count() == 0
+        profile = Profile.objects.create(name=name, is_active=is_first)
         return JsonResponse({'success': True, 'profile_id': profile.id})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -171,7 +173,16 @@ def activate_profile(request, profile_id):
 def delete_profile(request, profile_id):
     if request.method == 'POST':
         profile = get_object_or_404(Profile, id=profile_id)
+        was_active = profile.is_active
         profile.delete()
+        
+        # If we deleted the active profile, activate another one if available
+        if was_active:
+            remaining_profile = Profile.objects.first()
+            if remaining_profile:
+                remaining_profile.is_active = True
+                remaining_profile.save()
+        
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
