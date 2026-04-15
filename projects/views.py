@@ -6,6 +6,8 @@ from .models import Project
 
 def project_list(request):
     sort_by = request.session.get('sort_by', 'custom')
+    group_by = request.session.get('group_by', 'none')
+    type_swap = request.session.get('type_swap', False)  # False = corporate first, True = personal first
     
     if sort_by == 'status':
         projects = list(Project.objects.all().order_by('manual_status', 'order'))
@@ -28,17 +30,71 @@ def project_list(request):
         ('priority', 'Priority'),
     ]
     
+    group_options = [
+        ('none', 'None'),
+        ('status', 'Status'),
+        ('priority', 'Priority'),
+        ('type', 'Type'),
+    ]
+    
     # Get current sort label
     sort_label = dict(sort_options).get(sort_by, 'Custom')
     
+    # Get current group label
+    group_label = dict(group_options).get(group_by, 'None')
+    
+    # Handle grouping
+    grouped_projects = []
+    if group_by == 'status':
+        # Group by status
+        status_dict = dict(Project.STATUS_CHOICES)
+        for value, label in Project.STATUS_CHOICES + [(None, 'auto')]:
+            group_projects = [p for p in projects if p.manual_status == value]
+            if group_projects:
+                grouped_projects.append({
+                    'group_label': label,
+                    'group_value': value,
+                    'projects': group_projects
+                })
+    elif group_by == 'priority':
+        # Group by priority
+        priority_dict = dict(Project.PRIORITY_CHOICES)
+        for value, label in Project.PRIORITY_CHOICES:
+            group_projects = [p for p in projects if p.priority == value]
+            if group_projects:
+                grouped_projects.append({
+                    'group_label': label,
+                    'group_value': value,
+                    'projects': group_projects
+                })
+    elif group_by == 'type':
+        # Group by project type (corporate/personal)
+        type_order = [('personal', 'Personal'), ('corporate', 'Corporate')] if type_swap else [('corporate', 'Corporate'), ('personal', 'Personal')]
+        for value, label in type_order:
+            group_projects = [p for p in projects if p.project_type == value]
+            if group_projects:
+                grouped_projects.append({
+                    'group_label': label,
+                    'group_value': value,
+                    'projects': group_projects
+                })
+    else:
+        # No grouping
+        grouped_projects = [{'group_label': None, 'group_value': None, 'projects': projects}]
+    
     context = {
         'projects': projects,
+        'grouped_projects': grouped_projects,
         'overdue_count': overdue_count,
         'status_options': status_options,
         'priority_options': priority_options,
         'sort_options': sort_options,
+        'group_options': group_options,
         'current_sort': sort_by,
         'current_sort_label': sort_label,
+        'current_group': group_by,
+        'current_group_label': group_label,
+        'type_swap': type_swap,
     }
     return render(request, 'projects/index.html', context)
 
@@ -49,6 +105,24 @@ def set_sort(request):
         sort_by = request.POST.get('sort_by', 'custom')
         # Store sort preference in session
         request.session['sort_by'] = sort_by
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+@csrf_exempt
+def set_group(request):
+    if request.method == 'POST':
+        group_by = request.POST.get('group_by', 'none')
+        # Store group preference in session
+        request.session['group_by'] = group_by
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+@csrf_exempt
+def swap_type_order(request):
+    if request.method == 'POST':
+        # Toggle the swap preference
+        current_swap = request.session.get('type_swap', False)
+        request.session['type_swap'] = not current_swap
         return JsonResponse({'success': True})
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 

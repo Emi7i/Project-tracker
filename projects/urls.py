@@ -11,4 +11,6 @@ urlpatterns = [
     path('update-status/<int:pk>/', views.update_project_status, name='update_project_status'),
     path('update-priority/<int:pk>/', views.update_project_priority, name='update_project_priority'),
     path('set-sort/', views.set_sort, name='set_sort'),
+    path('set-group/', views.set_group, name='set_group'),
+    path('swap-type-order/', views.swap_type_order, name='swap_type_order'),
 ]

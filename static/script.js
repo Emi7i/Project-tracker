@@ -115,6 +115,79 @@ async function setSort(sortValue, sortLabel) {
     }
 }
 
+// Group dropdown functionality
+let groupDropdownOpen = false;
+
+function toggleGroupDropdown(event) {
+    event.stopPropagation();
+    
+    // Close any open dropdown
+    if (openDropdownId) {
+        var openDropdown = document.getElementById(openDropdownId);
+        if (openDropdown) openDropdown.style.display = 'none';
+    }
+    
+    const dropdown = document.getElementById('group-dropdown');
+    const isVisible = dropdown.style.display === 'block';
+    
+    if (isVisible) {
+        dropdown.style.display = 'none';
+        groupDropdownOpen = false;
+    } else {
+        dropdown.style.display = 'block';
+        groupDropdownOpen = true;
+    }
+}
+
+async function setGroup(groupValue, groupLabel) {
+    document.getElementById('group-label').textContent = groupLabel;
+    document.getElementById('group-dropdown').style.display = 'none';
+    groupDropdownOpen = false;
+    
+    try {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
+        formData.append('group_by', groupValue);
+        
+        const response = await fetch('/set-group/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.reload();
+        } else {
+            alert(result.error || 'Failed to set group');
+        }
+    } catch (error) {
+        alert('Error setting group');
+    }
+}
+
+async function swapTypeOrder() {
+    try {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
+        
+        const response = await fetch('/swap-type-order/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.reload();
+        } else {
+            alert(result.error || 'Failed to swap order');
+        }
+    } catch (error) {
+        alert('Error swapping order');
+    }
+}
+
 // Drag and drop functionality
 const projectList = document.getElementById('project-list');
 

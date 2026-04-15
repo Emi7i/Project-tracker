@@ -39,6 +39,23 @@
                         {% endfor %}
                     </div>
                 </div>
+                <div style="position: relative;">
+                    <span class="badge" style="font-size: 13px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;" onclick="toggleGroupDropdown(event)">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <span id="group-label">{{ current_group_label }}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                    </span>
+                    <div id="group-dropdown" class="status-dropdown" style="display: none;">
+                        {% for option_value, option_label in group_options %}
+                            <div class="status-dropdown-item" onclick="setGroup('{{ option_value }}', '{{ option_label }}')">{{ option_label }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if current_group == 'type' %}
+                    <button onclick="swapTypeOrder()" style="font-size: 13px; padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    </button>
+                {% endif %}
                 <button onclick="toggleForm()" style="font-size: 13px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer">+ add project</button>
             </div>
         </div>
@@ -78,28 +95,33 @@
             {% if not projects %}
                 <div style="text-align: center; padding: 3rem 1rem; color: var(--color-text-tertiary); font-size: 14px">no projects yet — add your first one above</div>
             {% else %}
-                {% for project in projects %}
-                    <div class="proj-card" data-id="{{ project.id }}" draggable="true">
-                        <div class="drag-handle" onclick="event.stopPropagation()">
-                            <i class="fa-solid fa-grip-vertical"></i>
-                        </div>
-                        <span class="proj-dot" style="background: {{ project.dot_color }}"></span>
-                        <div class="proj-body">
-                            <div class="proj-name">{{ project.name }}</div>
-                            <div class="proj-action">→ {{ project.next_action|default:"no next action set" }}</div>
-                            <div class="proj-footer" style="position: relative;">
-                                {% include "projects/dropdown_component.html" with dropdown_prefix="status-dropdown" badge_class=project.status badge_label=project.status_label project_id=project.id options=status_options update_url="/update-status/" %}
-                                {% include "projects/dropdown_component.html" with dropdown_prefix="priority-dropdown" badge_class=project.priority badge_label=project.get_priority_display project_id=project.id options=priority_options update_url="/update-priority/" %}
-                                {% if project.due_date %}
-                                    <span class="proj-date">{{ project.days_label }} · {{ project.formatted_date }}</span>
-                                {% endif %}
+                {% for group in grouped_projects %}
+                    {% if group.group_label %}
+                        <div style="font-size: 12px; font-weight: 500; color: var(--color-text-secondary); margin: 1.5rem 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.5px;">{{ group.group_label }}</div>
+                    {% endif %}
+                    {% for project in group.projects %}
+                        <div class="proj-card" data-id="{{ project.id }}" draggable="true">
+                            <div class="drag-handle" onclick="event.stopPropagation()">
+                                <i class="fa-solid fa-grip-vertical"></i>
+                            </div>
+                            <span class="proj-dot" style="background: {{ project.dot_color }}"></span>
+                            <div class="proj-body">
+                                <div class="proj-name">{{ project.name }}</div>
+                                <div class="proj-action">→ {{ project.next_action|default:"no next action set" }}</div>
+                                <div class="proj-footer" style="position: relative;">
+                                    {% include "projects/dropdown_component.html" with dropdown_prefix="status-dropdown" badge_class=project.status badge_label=project.status_label project_id=project.id options=status_options update_url="/update-status/" %}
+                                    {% include "projects/dropdown_component.html" with dropdown_prefix="priority-dropdown" badge_class=project.priority badge_label=project.get_priority_display project_id=project.id options=priority_options update_url="/update-priority/" %}
+                                    {% if project.due_date %}
+                                        <span class="proj-date">{{ project.days_label }} · {{ project.formatted_date }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="proj-actions">
+                                <button class="icon-btn" onclick="editProject({{ project.id }})" title="edit">✎</button>
+                                <button class="icon-btn" onclick="deleteProject({{ project.id }})" title="remove">✕</button>
                             </div>
                         </div>
-                        <div class="proj-actions">
-                            <button class="icon-btn" onclick="editProject({{ project.id }})" title="edit">✎</button>
-                            <button class="icon-btn" onclick="deleteProject({{ project.id }})" title="remove">✕</button>
-                        </div>
-                    </div>
+                    {% endfor %}
                 {% endfor %}
             {% endif %}
         </div>
