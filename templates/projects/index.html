@@ -1,0 +1,398 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Tracker</title>
+    <style>
+        :root {
+            --color-background-primary: #ffffff;
+            --color-background-secondary: #f8f9fa;
+            --color-background-success: #d4edda;
+            --color-background-warning: #fff3cd;
+            --color-background-danger: #f8d7da;
+            --color-text-primary: #212529;
+            --color-text-secondary: #6c757d;
+            --color-text-tertiary: #adb5bd;
+            --color-text-success: #155724;
+            --color-text-warning: #856404;
+            --color-text-danger: #721c24;
+            --color-border-secondary: #dee2e6;
+            --color-border-tertiary: #e9ecef;
+            --border-radius-md: 4px;
+            --border-radius-lg: 8px;
+            --font-mono: 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--color-background-secondary);
+            color: var(--color-text-primary);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .proj-card {
+            background: var(--color-background-primary);
+            border: 0.5px solid var(--color-border-tertiary);
+            border-radius: var(--border-radius-lg);
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .proj-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        .proj-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .proj-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--color-text-primary);
+            margin-bottom: 3px;
+        }
+
+        .proj-action {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            font-family: var(--font-mono);
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .proj-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: var(--border-radius-md);
+        }
+
+        .badge-ontrack {
+            background: var(--color-background-success);
+            color: var(--color-text-success);
+        }
+
+        .badge-atrisk {
+            background: var(--color-background-warning);
+            color: var(--color-text-warning);
+        }
+
+        .badge-overdue {
+            background: var(--color-background-danger);
+            color: var(--color-text-danger);
+        }
+
+        .badge-ongoing {
+            background: var(--color-background-secondary);
+            color: var(--color-text-secondary);
+        }
+
+        .proj-date {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+        }
+
+        .proj-actions {
+            display: flex;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--color-text-tertiary);
+            font-size: 13px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            line-height: 1;
+        }
+
+        .icon-btn:hover {
+            background: var(--color-background-secondary);
+            color: var(--color-text-primary);
+        }
+
+        .form-row {
+            margin-bottom: 10px;
+        }
+
+        .form-row label {
+            display: block;
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .form-row input,
+        .form-row select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid var(--color-border-secondary);
+            border-radius: var(--border-radius-md);
+            background-color: var(--color-background-primary);
+            color: var(--color-text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            height: 42px;
+        }
+
+        .form-row input:focus,
+        .form-row select:focus {
+            outline: none;
+            border-color: var(--color-text-secondary);
+            box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.1);
+        }
+
+        .form-row input::placeholder {
+            color: var(--color-text-tertiary);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .form-btns {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        .hint {
+            font-size: 11px;
+            color: var(--color-text-tertiary);
+            margin-top: 3px;
+        }
+
+        .stats {
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+        }
+    </style>
+</head>
+<body>
+    <h2 class="sr-only">Project tracker — manage personal and corporate projects with next actions</h2>
+
+    <div id="app" class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px">
+            <div style="display: flex; gap: 14px; align-items: center">
+                <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--color-text-secondary)">
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #BA7517"></span>corporate
+                </span>
+                <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--color-text-secondary)">
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #1D9E75"></span>personal
+                </span>
+                <span class="stats" id="stats-line">
+                    {% if projects %}
+                        {{ projects|length }} project{{ projects|length|pluralize }}{% if overdue_count %} · {{ overdue_count }} overdue{% endif %}
+                    {% endif %}
+                </span>
+            </div>
+            <button onclick="toggleForm()" style="font-size: 13px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer">+ add project</button>
+        </div>
+
+        <div id="form-wrap" style="display: none; background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; border: 0.5px solid var(--color-border-tertiary)">
+            <form id="project-form" method="post">
+                {% csrf_token %}
+                <div class="form-row">
+                    <label for="f-name">project name</label>
+                    <input type="text" id="f-name" name="name" placeholder="e.g. Website relaunch" />
+                </div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="f-type">type</label>
+                        <select id="f-type" name="type" onchange="onTypeChange()">
+                            <option value="corporate">corporate</option>
+                            <option value="personal">personal</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="f-date">due date <span id="date-hint" style="color: var(--color-text-tertiary)">(required for corporate)</span></label>
+                        <input type="date" id="f-date" name="due_date" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label for="f-action">next action</label>
+                    <input type="text" id="f-action" name="next_action" placeholder="e.g. Send first draft to client" />
+                </div>
+                <div class="form-btns">
+                    <button type="button" onclick="cancelForm()" style="font-size: 13px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-secondary); cursor: pointer">cancel</button>
+                    <button type="submit" id="save-btn" style="font-size: 13px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer">save project</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="project-list">
+            {% if not projects %}
+                <div style="text-align: center; padding: 3rem 1rem; color: var(--color-text-tertiary); font-size: 14px">no projects yet — add your first one above</div>
+            {% else %}
+                {% for project in projects %}
+                    <div class="proj-card">
+                        <span class="proj-dot" style="background: {{ project.dot_color }}"></span>
+                        <div class="proj-body">
+                            <div class="proj-name">{{ project.name }}</div>
+                            <div class="proj-action">→ {{ project.next_action|default:"no next action set" }}</div>
+                            <div class="proj-footer">
+                                <span class="badge badge-{{ project.status }}">{{ project.status_label }}</span>
+                                {% if project.due_date %}
+                                    <span class="proj-date">{{ project.days_label }} · {{ project.formatted_date }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="proj-actions">
+                            <button class="icon-btn" onclick="editProject({{ project.id }})" title="edit">✎</button>
+                            <button class="icon-btn" onclick="deleteProject({{ project.id }})" title="remove">✕</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        let editingId = null;
+
+        function toggleForm() {
+            editingId = null;
+            document.getElementById('project-form').reset();
+            document.getElementById('f-type').value = 'corporate';
+            document.getElementById('save-btn').textContent = 'save project';
+            document.getElementById('date-hint').textContent = '(required for corporate)';
+            const w = document.getElementById('form-wrap');
+            w.style.display = w.style.display === 'none' ? 'block' : 'none';
+            if (w.style.display === 'block') {
+                document.getElementById('f-name').focus();
+            }
+        }
+
+        function cancelForm() {
+            editingId = null;
+            document.getElementById('form-wrap').style.display = 'none';
+        }
+
+        function onTypeChange() {
+            const t = document.getElementById('f-type').value;
+            document.getElementById('date-hint').textContent = t === 'corporate' ? '(required)' : '(optional)';
+        }
+
+        document.getElementById('project-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const url = editingId ? `/update/${editingId}/` : '/create/';
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alert(result.error || 'An error occurred');
+                }
+            } catch (error) {
+                alert('An error occurred');
+            }
+        });
+
+        async function editProject(id) {
+            editingId = id;
+            
+            // Fetch project data
+            try {
+                const response = await fetch(`/api/project/${id}/`);
+                const project = await response.json();
+                
+                document.getElementById('f-name').value = project.name;
+                document.getElementById('f-type').value = project.project_type;
+                document.getElementById('f-date').value = project.due_date || '';
+                document.getElementById('f-action').value = project.next_action || '';
+                document.getElementById('save-btn').textContent = 'update project';
+                document.getElementById('date-hint').textContent = project.project_type === 'corporate' ? '(required)' : '(optional)';
+                document.getElementById('form-wrap').style.display = 'block';
+                document.getElementById('f-name').focus();
+            } catch (error) {
+                alert('Failed to load project data');
+            }
+        }
+
+        async function deleteProject(id) {
+            if (!confirm('Are you sure you want to delete this project?')) {
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                const response = await fetch(`/delete/${id}/`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alert(result.error || 'An error occurred');
+                }
+            } catch (error) {
+                alert('An error occurred');
+            }
+        }
+    </script>
+</body>
+</html>
