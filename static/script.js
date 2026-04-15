@@ -64,6 +64,57 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Sort dropdown functionality
+let sortDropdownOpen = false;
+
+function toggleSortDropdown(event) {
+    event.stopPropagation();
+    
+    // Close any open dropdown
+    if (openDropdownId) {
+        var openDropdown = document.getElementById(openDropdownId);
+        if (openDropdown) openDropdown.style.display = 'none';
+    }
+    
+    const dropdown = document.getElementById('sort-dropdown');
+    const isVisible = dropdown.style.display === 'block';
+    
+    if (isVisible) {
+        dropdown.style.display = 'none';
+        sortDropdownOpen = false;
+    } else {
+        dropdown.style.display = 'block';
+        sortDropdownOpen = true;
+    }
+}
+
+async function setSort(sortValue, sortLabel) {
+    document.getElementById('sort-label').textContent = sortLabel;
+    document.getElementById('sort-dropdown').style.display = 'none';
+    sortDropdownOpen = false;
+    
+    try {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
+        formData.append('sort_by', sortValue);
+        
+        const response = await fetch('/set-sort/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            window.location.reload();
+        } else {
+            alert(result.error || 'Failed to set sort');
+        }
+    } catch (error) {
+        alert('Error setting sort');
+    }
+}
+
 // Drag and drop functionality
 const projectList = document.getElementById('project-list');
 

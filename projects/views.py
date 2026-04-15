@@ -5,21 +5,52 @@ from .models import Project
 
 
 def project_list(request):
-    projects = list(Project.objects.all().order_by('order'))
+    sort_by = request.session.get('sort_by', 'custom')
+    
+    if sort_by == 'status':
+        projects = list(Project.objects.all().order_by('manual_status', 'order'))
+    elif sort_by == 'priority':
+        # Priority order: urgent, high, medium, low
+        projects = list(Project.objects.all().extra(
+            select={'priority_order': "CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END"}
+        ).order_by('priority_order', 'order'))
+    else:
+        projects = list(Project.objects.all().order_by('order'))
     
     overdue_count = sum(1 for p in projects if p.status == 'overdue')
     
     status_options = Project.STATUS_CHOICES + [(None, 'auto')]
     priority_options = Project.PRIORITY_CHOICES
     
+    sort_options = [
+        ('custom', 'Custom'),
+        ('status', 'Status'),
+        ('priority', 'Priority'),
+    ]
+    
+    # Get current sort label
+    sort_label = dict(sort_options).get(sort_by, 'Custom')
+    
     context = {
         'projects': projects,
         'overdue_count': overdue_count,
         'status_options': status_options,
         'priority_options': priority_options,
+        'sort_options': sort_options,
+        'current_sort': sort_by,
+        'current_sort_label': sort_label,
     }
     return render(request, 'projects/index.html', context)
 
+
+@csrf_exempt
+def set_sort(request):
+    if request.method == 'POST':
+        sort_by = request.POST.get('sort_by', 'custom')
+        # Store sort preference in session
+        request.session['sort_by'] = sort_by
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
 @csrf_exempt
 def project_create(request):

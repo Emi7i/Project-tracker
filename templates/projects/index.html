@@ -26,7 +26,21 @@
                     {% endif %}
                 </span>
             </div>
-            <button onclick="toggleForm()" style="font-size: 13px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer">+ add project</button>
+            <div style="display: flex; gap: 8px; align-items: center">
+                <div style="position: relative;">
+                    <span class="badge" style="font-size: 13px; padding: 6px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;" onclick="toggleSortDropdown(event)">
+                        <i class="fa-solid fa-sort"></i>
+                        <span id="sort-label">{{ current_sort_label }}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
+                    </span>
+                    <div id="sort-dropdown" class="status-dropdown" style="display: none;">
+                        {% for option_value, option_label in sort_options %}
+                            <div class="status-dropdown-item" onclick="setSort('{{ option_value }}', '{{ option_label }}')">{{ option_label }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button onclick="toggleForm()" style="font-size: 13px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-primary); cursor: pointer">+ add project</button>
+            </div>
         </div>
 
         <div id="form-wrap" style="display: none; background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; border: 0.5px solid var(--color-border-tertiary)">
