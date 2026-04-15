@@ -2,8 +2,8 @@ let editingId = null;
 let draggedItem = null;
 let openDropdownId = null;
 
-// Status dropdown functionality
-function toggleStatusDropdown(projectId, event) {
+// Generic dropdown functionality
+function toggleDropdown(dropdownId, projectId, event) {
     event.stopPropagation();
     
     // Close any open dropdown
@@ -12,7 +12,7 @@ function toggleStatusDropdown(projectId, event) {
         if (openDropdown) openDropdown.style.display = 'none';
     }
     
-    const dropdown = document.getElementById('status-dropdown-' + projectId);
+    const dropdown = document.getElementById(dropdownId);
     const isVisible = dropdown.style.display === 'block';
     
     if (isVisible) {
@@ -20,17 +20,23 @@ function toggleStatusDropdown(projectId, event) {
         openDropdownId = null;
     } else {
         dropdown.style.display = 'block';
-        openDropdownId = 'status-dropdown-' + projectId;
+        openDropdownId = dropdownId;
     }
 }
 
-async function setStatus(projectId, status) {
+async function updateDropdown(dropdownId, projectId, value, updateUrl) {
     try {
         const formData = new FormData();
         formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
-        formData.append('status', status || '');
         
-        const response = await fetch('/update-status/' + projectId + '/', {
+        // Determine field name based on updateUrl
+        if (updateUrl.includes('status')) {
+            formData.append('status', value || '');
+        } else if (updateUrl.includes('priority')) {
+            formData.append('priority', value);
+        }
+        
+        const response = await fetch(updateUrl + projectId + '/', {
             method: 'POST',
             body: formData
         });
@@ -40,55 +46,10 @@ async function setStatus(projectId, status) {
         if (result.success) {
             window.location.reload();
         } else {
-            alert(result.error || 'Failed to update status');
+            alert(result.error || 'Failed to update');
         }
     } catch (error) {
-        alert('Error updating status');
-    }
-}
-
-// Priority dropdown functionality
-function togglePriorityDropdown(projectId, event) {
-    event.stopPropagation();
-    
-    // Close any open dropdown
-    if (openDropdownId) {
-        var openDropdown = document.getElementById(openDropdownId);
-        if (openDropdown) openDropdown.style.display = 'none';
-    }
-    
-    const dropdown = document.getElementById('priority-dropdown-' + projectId);
-    const isVisible = dropdown.style.display === 'block';
-    
-    if (isVisible) {
-        dropdown.style.display = 'none';
-        openDropdownId = null;
-    } else {
-        dropdown.style.display = 'block';
-        openDropdownId = 'priority-dropdown-' + projectId;
-    }
-}
-
-async function setPriority(projectId, priority) {
-    try {
-        const formData = new FormData();
-        formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
-        formData.append('priority', priority);
-        
-        const response = await fetch('/update-priority/' + projectId + '/', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            window.location.reload();
-        } else {
-            alert(result.error || 'Failed to update priority');
-        }
-    } catch (error) {
-        alert('Error updating priority');
+        alert('Error updating');
     }
 }
 

@@ -55,12 +55,7 @@ class Project(models.Model):
 
     @property
     def status_label(self):
-        labels = {
-            'ongoing': 'ongoing',
-            'ontrack': 'on track',
-            'atrisk': 'at risk',
-            'overdue': 'overdue',
-        }
+        labels = dict(Project.STATUS_CHOICES)
         return labels.get(self.status, '')
 
     @property

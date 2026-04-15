@@ -9,9 +9,14 @@ def project_list(request):
     
     overdue_count = sum(1 for p in projects if p.status == 'overdue')
     
+    status_options = Project.STATUS_CHOICES + [(None, 'auto')]
+    priority_options = Project.PRIORITY_CHOICES
+    
     context = {
         'projects': projects,
         'overdue_count': overdue_count,
+        'status_options': status_options,
+        'priority_options': priority_options,
     }
     return render(request, 'projects/index.html', context)
 

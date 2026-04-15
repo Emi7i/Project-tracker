@@ -1,5 +1,4 @@
 {% load static %}
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -75,21 +74,8 @@
                             <div class="proj-name">{{ project.name }}</div>
                             <div class="proj-action">→ {{ project.next_action|default:"no next action set" }}</div>
                             <div class="proj-footer" style="position: relative;">
-                                <span class="badge badge-{{ project.status }}" onclick="toggleStatusDropdown({{ project.id }}, event)">{{ project.status_label }}</span>
-                                <div id="status-dropdown-{{ project.id }}" class="status-dropdown" style="display: none;">
-                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'ongoing')">ongoing</div>
-                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'ontrack')">on track</div>
-                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'atrisk')">at risk</div>
-                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'overdue')">overdue</div>
-                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, null)" style="border-top: 1px solid var(--color-border-tertiary); margin-top: 4px; padding-top: 8px;">auto</div>
-                                </div>
-                                <span class="badge badge-{{ project.priority }}" onclick="togglePriorityDropdown({{ project.id }}, event)">{{ project.get_priority_display }}</span>
-                                <div id="priority-dropdown-{{ project.id }}" class="status-dropdown" style="display: none;">
-                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'low')">low</div>
-                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'medium')">medium</div>
-                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'high')">high</div>
-                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'urgent')">urgent</div>
-                                </div>
+                                {% include "projects/dropdown_component.html" with dropdown_prefix="status-dropdown" badge_class=project.status badge_label=project.status_label project_id=project.id options=status_options update_url="/update-status/" %}
+                                {% include "projects/dropdown_component.html" with dropdown_prefix="priority-dropdown" badge_class=project.priority badge_label=project.get_priority_display project_id=project.id options=priority_options update_url="/update-priority/" %}
                                 {% if project.due_date %}
                                     <span class="proj-date">{{ project.days_label }} · {{ project.formatted_date }}</span>
                                 {% endif %}
