@@ -2,58 +2,74 @@
 
 A Django-based project tracker application for managing personal and corporate projects with next actions.
 
-## Features
+> ### NOTICE! This is a vibe-coded project created with SWE-1.6 from Cognition. 
+> Link: https://cognition.ai/blog/swe-1-6 <br>
+> 
+> You are free to contribute to this project, fork and use for personal or commercial purposes.
 
-- Add, edit, and delete projects
-- Track project types (corporate/personal)
-- Set due dates (required for corporate projects)
-- Define next actions for each project
-- Automatic status calculation (on track, at risk, overdue, ongoing)
-- Visual indicators for project types and status
-- Statistics display
+## UI
+<img src="ui_photos/img2.png" width="500" height="350">
+<img src="ui_photos/img1.png" width="500" height="350">
+<img src="ui_photos/img.png" width="500">
+
 
 ## Installation
 
-1. Create a virtual environment:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Emi7i/Project-tracker
+   cd "Task App"
+   
+2. Create a virtual environment:
    ```bash
    python -m venv .venv
+   ```
+   and use it:
+   ```bash
    .venv\Scripts\activate  # Windows
    # or
    source .venv/bin/activate  # Linux/Mac
    ```
 
-2. Install dependencies:
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Run migrations:
+4. Run migrations:
    ```bash
    python manage.py makemigrations
    python manage.py migrate
    ```
 
-4. Create a superuser (optional, for admin access):
+5. Create a superuser (optional, for admin access):
    ```bash
    python manage.py createsuperuser
    ```
 
-5. Run the development server:
+6. Run the development server:
    ```bash
    python manage.py runserver
    ```
 
-6. Open your browser and navigate to `http://127.0.0.1:8000/`
+7. Open your browser and navigate to `http://127.0.0.1:8000/`
 
 ## Usage
+```
+-> Click `+ add project` button to create a new project
+-> Input a name, select a type, and a due date
+-> You can also add what is the next task you need to do in this project
 
-- Click "+ add project" to create a new project
-- Corporate projects require a due date
-- Personal projects can have optional due dates
-- Click the edit (✎) button to modify a project
-- Click the remove (✕) button to delete a project
-- Projects are automatically sorted by status priority (overdue → at risk → on track → ongoing)
-
+-> Click the edit (✎) button to modify a project
+-> Click the remove (✕) button to delete a project
+-> Drag and drop projects to reorder them
+-> Use the sort dropdown to sort by custom order, status, or priority
+-> Use the group dropdown to group projects by status, priority, or type
+```
 ## Admin Interface
 
 Access the Django admin interface at `http://127.0.0.1:8000/admin/` to manage projects through the admin panel.
+> Note:  You need to create a superuser account first by running:
+> ```bash
+> python manage.py createsuperuser
+> ```
