@@ -33,6 +33,7 @@ class TypeDefinition(models.Model):
 class StatusDefinition(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='status_definitions')
     name = models.CharField(max_length=50)
+    color = models.CharField(max_length=7, default='#1D9E75')
     order = models.IntegerField(default=0)
 
     def __str__(self):
@@ -45,6 +46,7 @@ class StatusDefinition(models.Model):
 class PriorityDefinition(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='priority_definitions')
     name = models.CharField(max_length=50)
+    color = models.CharField(max_length=7, default='#BA7517')
     order = models.IntegerField(default=0)
 
     def __str__(self):
@@ -61,7 +63,7 @@ class Project(models.Model):
     next_action = models.CharField(max_length=500, blank=True)
     order = models.IntegerField(default=0)
     manual_status = models.CharField(max_length=20, null=True, blank=True)
-    priority = models.CharField(max_length=20, default='medium')
+    priority = models.CharField(max_length=20, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -72,34 +74,29 @@ class Project(models.Model):
     def status(self):
         if self.manual_status:
             return self.manual_status
-            
-        if not self.due_date:
-            return 'ongoing'
-        
-        today = timezone.now().date()
-        diff = (self.due_date - today).days
-        
-        if diff < 0:
-            return 'overdue'
-        elif diff <= 7:
-            return 'atrisk'
-        else:
-            return 'ontrack'
+        return None
 
     @property
     def status_label(self):
+        if not self.status:
+            return ''
         active_profile = Profile.objects.filter(is_active=True).first()
-        if active_profile and self.manual_status:
-            status_def = active_profile.status_definitions.filter(name__iexact=self.manual_status).first()
+        if active_profile:
+            status_def = active_profile.status_definitions.filter(name__iexact=self.status).first()
             if status_def:
                 return status_def.name.title()
-        labels = {
-            'ongoing': 'Ongoing',
-            'ontrack': 'On Track',
-            'atrisk': 'At Risk',
-            'overdue': 'Overdue',
-        }
-        return labels.get(self.status, '')
+        return self.status.title()
+
+    @property
+    def status_color(self):
+        if not self.status:
+            return '#999999'
+        active_profile = Profile.objects.filter(is_active=True).first()
+        if active_profile:
+            status_def = active_profile.status_definitions.filter(name__iexact=self.status).first()
+            if status_def:
+                return status_def.color
+        return '#999999'
 
     @property
     def days_label(self):
@@ -135,15 +132,22 @@ class Project(models.Model):
 
     @property
     def get_priority_display(self):
+        if not self.priority:
+            return ''
         active_profile = Profile.objects.filter(is_active=True).first()
-        if active_profile and self.priority:
+        if active_profile:
             priority_def = active_profile.priority_definitions.filter(name__iexact=self.priority).first()
             if priority_def:
                 return priority_def.name.title()
-        labels = {
-            'low': 'Low',
-            'medium': 'Medium',
-            'high': 'High',
-            'urgent': 'Urgent',
-        }
-        return labels.get(self.priority, 'Medium')
+        return self.priority.title()
+
+    @property
+    def priority_color(self):
+        if not self.priority:
+            return '#999999'
+        active_profile = Profile.objects.filter(is_active=True).first()
+        if active_profile:
+            priority_def = active_profile.priority_definitions.filter(name__iexact=self.priority).first()
+            if priority_def:
+                return priority_def.color
+        return '#999999'

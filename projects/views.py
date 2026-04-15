@@ -16,22 +16,26 @@ def project_list(request):
     if sort_by == 'status':
         projects = list(Project.objects.all().order_by('manual_status', 'order'))
     elif sort_by == 'priority':
-        # Priority order: urgent, high, medium, low
-        projects = list(Project.objects.all().extra(
-            select={'priority_order': "CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END"}
-        ).order_by('priority_order', 'order'))
+        # Sort by priority (nulls last)
+        projects = list(Project.objects.all().order_by('priority', 'order'))
     else:
         projects = list(Project.objects.all().order_by('order'))
     
-    overdue_count = sum(1 for p in projects if p.status == 'overdue')
+    overdue_count = 0
     
     # Get status and priority options from active profile or fallback to defaults
     if active_profile:
-        status_options = [(s.name.lower(), s.name.title()) for s in active_profile.status_definitions.all()] + [(None, 'auto')]
-        priority_options = [(p.name.lower(), p.name.title()) for p in active_profile.priority_definitions.all()]
+        status_definitions = active_profile.status_definitions.all()
+        priority_definitions = active_profile.priority_definitions.all()
+        type_definitions = active_profile.type_definitions.all()
+        
+        status_options = [(s.name.lower(), s.name.title(), s.color) for s in status_definitions] + [(None, 'auto', '#999999')] if status_definitions.exists() else [(None, 'auto', '#999999')]
+        priority_options = [(p.name.lower(), p.name.title(), p.color) for p in priority_definitions] if priority_definitions.exists() else []
+        type_options = [(t.name.lower(), t.name.title(), t.color) for t in type_definitions] if type_definitions.exists() else [('corporate', 'Corporate', '#BA7517'), ('personal', 'Personal', '#1D9E75')]
     else:
-        status_options = [('ongoing', 'Ongoing'), ('ontrack', 'On Track'), ('atrisk', 'At Risk'), ('overdue', 'Overdue'), (None, 'auto')]
-        priority_options = [('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('urgent', 'Urgent')]
+        status_options = [('ongoing', 'Ongoing', '#1D9E75'), ('ontrack', 'On Track', '#10B981'), ('atrisk', 'At Risk', '#F59E0B'), ('overdue', 'Overdue', '#EF4444'), (None, 'auto', '#999999')]
+        priority_options = [('low', 'Low', '#10B981'), ('medium', 'Medium', '#F59E0B'), ('high', 'High', '#F97316'), ('urgent', 'Urgent', '#EF4444')]
+        type_options = [('corporate', 'Corporate', '#BA7517'), ('personal', 'Personal', '#1D9E75')]
     
     sort_options = [
         ('custom', 'Custom'),
@@ -97,6 +101,7 @@ def project_list(request):
         'overdue_count': overdue_count,
         'status_options': status_options,
         'priority_options': priority_options,
+        'type_options': type_options,
         'sort_options': sort_options,
         'group_options': group_options,
         'current_sort': sort_by,
@@ -210,6 +215,7 @@ def create_status_definition(request):
     if request.method == 'POST':
         profile_id = request.POST.get('profile_id')
         name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', '#1D9E75')
         
         if not profile_id or not name:
             return JsonResponse({'error': 'Missing required fields'}, status=400)
@@ -217,7 +223,7 @@ def create_status_definition(request):
         profile = get_object_or_404(Profile, id=profile_id)
         # Get the next order value
         max_order = profile.status_definitions.aggregate(models.Max('order'))['order__max'] or 0
-        StatusDefinition.objects.create(profile=profile, name=name, order=max_order + 1)
+        StatusDefinition.objects.create(profile=profile, name=name, color=color, order=max_order + 1)
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -227,6 +233,7 @@ def create_priority_definition(request):
     if request.method == 'POST':
         profile_id = request.POST.get('profile_id')
         name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', '#BA7517')
         
         if not profile_id or not name:
             return JsonResponse({'error': 'Missing required fields'}, status=400)
@@ -234,7 +241,7 @@ def create_priority_definition(request):
         profile = get_object_or_404(Profile, id=profile_id)
         # Get the next order value
         max_order = profile.priority_definitions.aggregate(models.Max('order'))['order__max'] or 0
-        PriorityDefinition.objects.create(profile=profile, name=name, order=max_order + 1)
+        PriorityDefinition.objects.create(profile=profile, name=name, color=color, order=max_order + 1)
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
@@ -330,14 +337,22 @@ def project_create(request):
         if not name:
             return JsonResponse({'error': 'Name is required'}, status=400)
         
-        if project_type == 'corporate' and not due_date:
-            return JsonResponse({'error': 'Due date is required for corporate projects'}, status=400)
+        # Get active profile and set first status and priority
+        active_profile = Profile.objects.filter(is_active=True).first()
+        first_status = None
+        first_priority = None
+        
+        if active_profile:
+            first_status = active_profile.status_definitions.first()
+            first_priority = active_profile.priority_definitions.first()
         
         project = Project.objects.create(
             name=name,
             project_type=project_type,
             due_date=due_date if due_date else None,
-            next_action=next_action
+            next_action=next_action,
+            manual_status=first_status.name.lower() if first_status else None,
+            priority=first_priority.name.lower() if first_priority else None
         )
         
         return JsonResponse({'success': True, 'id': project.id})
@@ -357,9 +372,6 @@ def project_update(request, pk):
         
         if not name:
             return JsonResponse({'error': 'Name is required'}, status=400)
-        
-        if project_type == 'corporate' and not due_date:
-            return JsonResponse({'error': 'Due date is required for corporate projects'}, status=400)
         
         project.name = name
         project.project_type = project_type
@@ -426,8 +438,8 @@ def update_project_status(request, pk):
 def update_project_priority(request, pk):
     if request.method == 'POST':
         project = get_object_or_404(Project, pk=pk)
-        priority = request.POST.get('priority', 'medium')
-        project.priority = priority
+        priority = request.POST.get('priority', '')
+        project.priority = priority if priority else None
         project.save()
         return JsonResponse({'success': True})
     

@@ -24,7 +24,7 @@ function toggleDropdown(dropdownId, projectId, event) {
     }
 }
 
-async function updateDropdown(dropdownId, projectId, value, updateUrl) {
+async function updateDropdown(dropdownId, projectId, value, updateUrl, color) {
     try {
         const formData = new FormData();
         formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
@@ -229,7 +229,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Settings functions
 function getCsrfToken() {
-    return document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    // Try to get CSRF token from settings content first, then from global
+    const settingsCsrf = document.querySelector('#settings-content input[name="csrfmiddlewaretoken"]');
+    if (settingsCsrf) {
+        return settingsCsrf.value;
+    }
+    const globalCsrf = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (globalCsrf) {
+        return globalCsrf.value;
+    }
+    // Fallback to get from cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    return '';
 }
 
 function toggleProfileDetails(profileId) {
@@ -298,8 +315,15 @@ function activateProfile(profileId) {
     })
     .then(result => {
         if (result.success) {
-            // Reload the main page to apply the new profile
-            window.location.reload();
+            // Reload settings content
+            fetch('/settings/')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('settings-content').innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching settings:', error);
+                });
         } else {
             alert(result.error || 'Failed to activate profile');
         }
@@ -391,6 +415,7 @@ function createTypeDefinition(profileId) {
 
 function createStatusDefinition(profileId) {
     const name = document.getElementById(`status-name-${profileId}`).value.trim();
+    const color = document.getElementById(`status-color-${profileId}`).value;
     
     if (!name) {
         alert('Please enter name');
@@ -401,6 +426,7 @@ function createStatusDefinition(profileId) {
     formData.append('csrfmiddlewaretoken', getCsrfToken());
     formData.append('profile_id', profileId);
     formData.append('name', name);
+    formData.append('color', color);
     
     fetch('/settings/create-status-definition/', {
         method: 'POST',
@@ -432,6 +458,7 @@ function createStatusDefinition(profileId) {
 
 function createPriorityDefinition(profileId) {
     const name = document.getElementById(`priority-name-${profileId}`).value.trim();
+    const color = document.getElementById(`priority-color-${profileId}`).value;
     
     if (!name) {
         alert('Please enter name');
@@ -442,6 +469,7 @@ function createPriorityDefinition(profileId) {
     formData.append('csrfmiddlewaretoken', getCsrfToken());
     formData.append('profile_id', profileId);
     formData.append('name', name);
+    formData.append('color', color);
     
     fetch('/settings/create-priority-definition/', {
         method: 'POST',
@@ -738,9 +766,13 @@ async function saveNewOrder() {
 function toggleForm() {
     editingId = null;
     document.getElementById('project-form').reset();
-    document.getElementById('f-type').value = 'corporate';
+    // Set first type option as default
+    const typeSelect = document.getElementById('f-type');
+    if (typeSelect && typeSelect.options.length > 0) {
+        typeSelect.value = typeSelect.options[0].value;
+    }
     document.getElementById('save-btn').textContent = 'save project';
-    document.getElementById('date-hint').textContent = '(required for corporate)';
+    document.getElementById('date-hint').textContent = '(optional)';
     const w = document.getElementById('form-wrap');
     w.style.display = w.style.display === 'none' ? 'block' : 'none';
     if (w.style.display === 'block') {
@@ -755,7 +787,7 @@ function cancelForm() {
 
 function onTypeChange() {
     const t = document.getElementById('f-type').value;
-    document.getElementById('date-hint').textContent = t === 'corporate' ? '(required)' : '(optional)';
+    document.getElementById('date-hint').textContent = '(optional)';
 }
 
 document.getElementById('project-form').addEventListener('submit', async function(e) {
@@ -799,7 +831,7 @@ async function editProject(id) {
         document.getElementById('f-date').value = project.due_date || '';
         document.getElementById('f-action').value = project.next_action || '';
         document.getElementById('save-btn').textContent = 'update project';
-        document.getElementById('date-hint').textContent = project.project_type === 'corporate' ? '(required)' : '(optional)';
+        document.getElementById('date-hint').textContent = '(optional)';
         document.getElementById('form-wrap').style.display = 'block';
         document.getElementById('f-name').focus();
     } catch (error) {

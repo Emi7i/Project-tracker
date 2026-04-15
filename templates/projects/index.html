@@ -14,12 +14,11 @@
     <div id="app" class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px">
             <div style="display: flex; gap: 14px; align-items: center">
-                <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--color-text-secondary)">
-                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #BA7517"></span>corporate
-                </span>
-                <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--color-text-secondary)">
-                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #1D9E75"></span>personal
-                </span>
+                {% for type_value, type_label, type_color in type_options %}
+                    <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--color-text-secondary)">
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: {{ type_color }}"></span>{{ type_label|lower }}
+                    </span>
+                {% endfor %}
                 <span class="stats" id="stats-line">
                     {% if projects %}
                         {{ projects|length }} project{{ projects|length|pluralize }}{% if overdue_count %} · {{ overdue_count }} overdue{% endif %}
@@ -74,12 +73,13 @@
                     <div class="form-row">
                         <label for="f-type">type</label>
                         <select id="f-type" name="type" onchange="onTypeChange()">
-                            <option value="corporate">corporate</option>
-                            <option value="personal">personal</option>
+                            {% for type_value, type_label, type_color in type_options %}
+                                <option value="{{ type_value }}">{{ type_label|lower }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="form-row">
-                        <label for="f-date">due date <span id="date-hint" style="color: var(--color-text-tertiary)">(required for corporate)</span></label>
+                        <label for="f-date">due date <span id="date-hint" style="color: var(--color-text-tertiary)">(optional)</span></label>
                         <input type="date" id="f-date" name="due_date" />
                     </div>
                 </div>
@@ -112,8 +112,8 @@
                                 <div class="proj-name">{{ project.name }}</div>
                                 <div class="proj-action">→ {{ project.next_action|default:"no next action set" }}</div>
                                 <div class="proj-footer" style="position: relative;">
-                                    {% include "projects/dropdown_component.html" with dropdown_prefix="status-dropdown" badge_class=project.status badge_label=project.status_label project_id=project.id options=status_options update_url="/update-status/" %}
-                                    {% include "projects/dropdown_component.html" with dropdown_prefix="priority-dropdown" badge_class=project.priority badge_label=project.get_priority_display project_id=project.id options=priority_options update_url="/update-priority/" %}
+                                    {% include "projects/dropdown_component.html" with dropdown_prefix="status-dropdown" badge_class=project.status badge_label=project.status_label project_id=project.id options=status_options update_url="/update-status/" badge_color=project.status_color %}
+                                    {% include "projects/dropdown_component.html" with dropdown_prefix="priority-dropdown" badge_class=project.priority badge_label=project.get_priority_display project_id=project.id options=priority_options update_url="/update-priority/" badge_color=project.priority_color %}
                                     {% if project.due_date %}
                                         <span class="proj-date">{{ project.days_label }} · {{ project.formatted_date }}</span>
                                     {% endif %}
