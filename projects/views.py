@@ -5,11 +5,7 @@ from .models import Project
 
 
 def project_list(request):
-    projects = list(Project.objects.all())
-    
-    # Sort by status priority
-    status_order = {'overdue': 0, 'atrisk': 1, 'ontrack': 2, 'ongoing': 3}
-    projects.sort(key=lambda p: status_order.get(p.status, 99))
+    projects = list(Project.objects.all().order_by('order'))
     
     overdue_count = sum(1 for p in projects if p.status == 'overdue')
     
@@ -92,3 +88,20 @@ def project_detail_api(request, pk):
         'due_date': project.due_date.isoformat() if project.due_date else '',
         'next_action': project.next_action,
     })
+
+
+@csrf_exempt
+def reorder_projects(request):
+    if request.method == 'POST':
+        import json
+        try:
+            order_data = json.loads(request.POST.get('order_data', '[]'))
+            for item in order_data:
+                project = get_object_or_404(Project, pk=item['id'])
+                project.order = item['order']
+                project.save()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)

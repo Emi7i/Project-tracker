@@ -12,6 +12,7 @@ class Project(models.Model):
     project_type = models.CharField(max_length=20, choices=PROJECT_TYPES, default='corporate')
     due_date = models.DateField(null=True, blank=True)
     next_action = models.CharField(max_length=500, blank=True)
+    order = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

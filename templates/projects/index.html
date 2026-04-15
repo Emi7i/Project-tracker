@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
             --color-background-primary: #ffffff;
@@ -65,14 +66,42 @@
             display: flex;
             align-items: flex-start;
             gap: 12px;
+            transition: box-shadow 0.2s;
+        }
+
+        .proj-card.dragging {
+            opacity: 0.5;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: var(--color-text-tertiary);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            align-self: center;
+        }
+
+        .drag-handle:hover {
+            color: var(--color-text-secondary);
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
         }
 
         .proj-dot {
             width: 9px;
             height: 9px;
             border-radius: 50%;
-            margin-top: 5px;
             flex-shrink: 0;
+            align-self: center;
+            margin-bottom: 5px;
         }
 
         .proj-body {
@@ -275,7 +304,10 @@
                 <div style="text-align: center; padding: 3rem 1rem; color: var(--color-text-tertiary); font-size: 14px">no projects yet — add your first one above</div>
             {% else %}
                 {% for project in projects %}
-                    <div class="proj-card">
+                    <div class="proj-card" data-id="{{ project.id }}" draggable="true">
+                        <div class="drag-handle">
+                            <i class="fa-solid fa-grip-vertical"></i>
+                        </div>
                         <span class="proj-dot" style="background: {{ project.dot_color }}"></span>
                         <div class="proj-body">
                             <div class="proj-name">{{ project.name }}</div>
@@ -299,6 +331,72 @@
 
     <script>
         let editingId = null;
+        let draggedItem = null;
+
+        // Drag and drop functionality
+        const projectList = document.getElementById('project-list');
+        
+        projectList.addEventListener('dragstart', function(e) {
+            const card = e.target.closest('.proj-card');
+            if (card) {
+                draggedItem = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+
+        projectList.addEventListener('dragend', function(e) {
+            const card = e.target.closest('.proj-card');
+            if (card) {
+                card.classList.remove('dragging');
+                draggedItem = null;
+                saveNewOrder();
+            }
+        });
+
+        projectList.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            const card = e.target.closest('.proj-card');
+            if (card && card !== draggedItem) {
+                const rect = card.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                
+                if (e.clientY < midY) {
+                    projectList.insertBefore(draggedItem, card);
+                } else {
+                    projectList.insertBefore(draggedItem, card.nextSibling);
+                }
+            }
+        });
+
+        async function saveNewOrder() {
+            const cards = document.querySelectorAll('.proj-card');
+            const orderData = [];
+            
+            cards.forEach((card, index) => {
+                const id = card.getAttribute('data-id');
+                orderData.push({ id: parseInt(id), order: index });
+            });
+
+            try {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('order_data', JSON.stringify(orderData));
+                
+                const response = await fetch('/reorder/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error('Failed to save order');
+                }
+            } catch (error) {
+                console.error('Error saving order:', error);
+            }
+        }
 
         function toggleForm() {
             editingId = null;
