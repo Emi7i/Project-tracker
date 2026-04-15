@@ -14,6 +14,13 @@ class Project(models.Model):
         ('atrisk', 'At Risk'),
         ('overdue', 'Overdue'),
     ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
 
     name = models.CharField(max_length=200)
     project_type = models.CharField(max_length=20, choices=PROJECT_TYPES, default='corporate')
@@ -21,6 +28,7 @@ class Project(models.Model):
     next_action = models.CharField(max_length=500, blank=True)
     order = models.IntegerField(default=0)
     manual_status = models.CharField(max_length=20, choices=STATUS_CHOICES, null=True, blank=True)
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

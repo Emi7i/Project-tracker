@@ -117,3 +117,15 @@ def update_project_status(request, pk):
         return JsonResponse({'success': True})
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def update_project_priority(request, pk):
+    if request.method == 'POST':
+        project = get_object_or_404(Project, pk=pk)
+        priority = request.POST.get('priority', 'medium')
+        project.priority = priority
+        project.save()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)

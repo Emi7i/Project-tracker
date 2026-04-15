@@ -193,6 +193,26 @@
             color: var(--color-text-secondary);
         }
 
+        .badge-low {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-medium {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-high {
+            background: #fce4ec;
+            color: #c2185b;
+        }
+
+        .badge-urgent {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
         .proj-date {
             font-size: 12px;
             color: var(--color-text-tertiary);
@@ -282,6 +302,7 @@
 </head>
 <body>
     <h2 class="sr-only">Project tracker — manage personal and corporate projects with next actions</h2>
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" id="global-csrf-token">
 
     <div id="app" class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px">
@@ -338,7 +359,7 @@
             {% else %}
                 {% for project in projects %}
                     <div class="proj-card" data-id="{{ project.id }}" draggable="true">
-                        <div class="drag-handle">
+                        <div class="drag-handle" onclick="event.stopPropagation()">
                             <i class="fa-solid fa-grip-vertical"></i>
                         </div>
                         <span class="proj-dot" style="background: {{ project.dot_color }}"></span>
@@ -353,6 +374,13 @@
                                     <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'atrisk')">at risk</div>
                                     <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'overdue')">overdue</div>
                                     <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, null)" style="border-top: 1px solid var(--color-border-tertiary); margin-top: 4px; padding-top: 8px;">auto</div>
+                                </div>
+                                <span class="badge badge-{{ project.priority }}" onclick="togglePriorityDropdown({{ project.id }}, event)">{{ project.get_priority_display }}</span>
+                                <div id="priority-dropdown-{{ project.id }}" class="status-dropdown" style="display: none;">
+                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'low')">low</div>
+                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'medium')">medium</div>
+                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'high')">high</div>
+                                    <div class="status-dropdown-item" onclick="setPriority({{ project.id }}, 'urgent')">urgent</div>
                                 </div>
                                 {% if project.due_date %}
                                     <span class="proj-date">{{ project.days_label }} · {{ project.formatted_date }}</span>
@@ -380,10 +408,10 @@
             
             // Close any open dropdown
             if (openDropdownId && openDropdownId !== projectId) {
-                document.getElementById(`status-dropdown-${openDropdownId}`).style.display = 'none';
+                document.getElementById('status-dropdown-' + openDropdownId).style.display = 'none';
             }
             
-            const dropdown = document.getElementById(`status-dropdown-${projectId}`);
+            const dropdown = document.getElementById('status-dropdown-' + projectId);
             const isVisible = dropdown.style.display === 'block';
             
             if (isVisible) {
@@ -398,10 +426,10 @@
         async function setStatus(projectId, status) {
             try {
                 const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
                 formData.append('status', status || '');
                 
-                const response = await fetch(`/update-status/${projectId}/`, {
+                const response = await fetch('/update-status/' + projectId + '/', {
                     method: 'POST',
                     body: formData
                 });
@@ -418,14 +446,65 @@
             }
         }
 
+        // Priority dropdown functionality
+        function togglePriorityDropdown(projectId, event) {
+            event.stopPropagation();
+            
+            // Close any open dropdown
+            if (openDropdownId && openDropdownId !== 'priority-' + projectId) {
+                var statusDropdown = document.getElementById('status-dropdown-' + openDropdownId);
+                if (statusDropdown) statusDropdown.style.display = 'none';
+                var priorityDropdown = document.getElementById('priority-dropdown-' + openDropdownId);
+                if (priorityDropdown) priorityDropdown.style.display = 'none';
+            }
+            
+            const dropdown = document.getElementById('priority-dropdown-' + projectId);
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (isVisible) {
+                dropdown.style.display = 'none';
+                openDropdownId = null;
+            } else {
+                dropdown.style.display = 'block';
+                openDropdownId = 'priority-' + projectId;
+            }
+        }
+
+        async function setPriority(projectId, priority) {
+            try {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
+                formData.append('priority', priority);
+                
+                const response = await fetch('/update-priority/' + projectId + '/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alert(result.error || 'Failed to update priority');
+                }
+            } catch (error) {
+                alert('Error updating priority');
+            }
+        }
+
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             if (openDropdownId && !e.target.closest('.status-dropdown') && !e.target.closest('.badge')) {
-                const dropdown = document.getElementById(`status-dropdown-${openDropdownId}`);
-                if (dropdown) {
-                    dropdown.style.display = 'none';
-                    openDropdownId = null;
+                var statusDropdown = document.getElementById('status-dropdown-' + openDropdownId);
+                var priorityDropdown = document.getElementById('priority-dropdown-' + openDropdownId);
+                if (statusDropdown) {
+                    statusDropdown.style.display = 'none';
                 }
+                if (priorityDropdown) {
+                    priorityDropdown.style.display = 'none';
+                }
+                openDropdownId = null;
             }
         });
 
@@ -476,7 +555,7 @@
 
             try {
                 const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
                 formData.append('order_data', JSON.stringify(orderData));
                 
                 const response = await fetch('/reorder/', {
@@ -521,7 +600,11 @@
             e.preventDefault();
             
             const formData = new FormData(this);
-            const url = editingId ? `/update/${editingId}/` : '/create/';
+            // Ensure CSRF token is included from the form itself
+            const csrfToken = document.getElementById('global-csrf-token').value;
+            formData.set('csrfmiddlewaretoken', csrfToken);
+            
+            const url = editingId ? '/update/' + editingId + '/' : '/create/';
             
             try {
                 const response = await fetch(url, {
@@ -546,7 +629,7 @@
             
             // Fetch project data
             try {
-                const response = await fetch(`/api/project/${id}/`);
+                const response = await fetch('/api/project/' + id + '/');
                 const project = await response.json();
                 
                 document.getElementById('f-name').value = project.name;
@@ -569,9 +652,9 @@
             
             try {
                 const formData = new FormData();
-                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
                 
-                const response = await fetch(`/delete/${id}/`, {
+                const response = await fetch('/delete/' + id + '/', {
                     method: 'POST',
                     body: formData
                 });
