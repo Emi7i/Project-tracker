@@ -8,4 +8,5 @@ urlpatterns = [
     path('delete/<int:pk>/', views.project_delete, name='project_delete'),
     path('api/project/<int:pk>/', views.project_detail_api, name='project_detail_api'),
     path('reorder/', views.reorder_projects, name='reorder_projects'),
+    path('update-status/<int:pk>/', views.update_project_status, name='update_project_status'),
 ]

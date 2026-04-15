@@ -138,6 +138,39 @@
             font-weight: 500;
             padding: 2px 8px;
             border-radius: var(--border-radius-md);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .badge:hover {
+            opacity: 0.8;
+        }
+
+        .status-dropdown {
+            position: absolute;
+            background: var(--color-background-primary);
+            border: 1px solid var(--color-border-secondary);
+            border-radius: var(--border-radius-md);
+            padding: 4px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 100px;
+        }
+
+        .status-dropdown-item {
+            padding: 8px 16px;
+            font-size: 13px;
+            cursor: pointer;
+            color: var(--color-text-primary);
+        }
+
+        .status-dropdown-item:hover {
+            background: var(--color-background-secondary);
+        }
+
+        .status-dropdown-item.selected {
+            background: var(--color-background-secondary);
+            font-weight: 500;
         }
 
         .badge-ontrack {
@@ -312,8 +345,15 @@
                         <div class="proj-body">
                             <div class="proj-name">{{ project.name }}</div>
                             <div class="proj-action">→ {{ project.next_action|default:"no next action set" }}</div>
-                            <div class="proj-footer">
-                                <span class="badge badge-{{ project.status }}">{{ project.status_label }}</span>
+                            <div class="proj-footer" style="position: relative;">
+                                <span class="badge badge-{{ project.status }}" onclick="toggleStatusDropdown({{ project.id }}, event)">{{ project.status_label }}</span>
+                                <div id="status-dropdown-{{ project.id }}" class="status-dropdown" style="display: none;">
+                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'ongoing')">ongoing</div>
+                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'ontrack')">on track</div>
+                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'atrisk')">at risk</div>
+                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, 'overdue')">overdue</div>
+                                    <div class="status-dropdown-item" onclick="setStatus({{ project.id }}, null)" style="border-top: 1px solid var(--color-border-tertiary); margin-top: 4px; padding-top: 8px;">auto</div>
+                                </div>
                                 {% if project.due_date %}
                                     <span class="proj-date">{{ project.days_label }} · {{ project.formatted_date }}</span>
                                 {% endif %}
@@ -332,6 +372,62 @@
     <script>
         let editingId = null;
         let draggedItem = null;
+        let openDropdownId = null;
+
+        // Status dropdown functionality
+        function toggleStatusDropdown(projectId, event) {
+            event.stopPropagation();
+            
+            // Close any open dropdown
+            if (openDropdownId && openDropdownId !== projectId) {
+                document.getElementById(`status-dropdown-${openDropdownId}`).style.display = 'none';
+            }
+            
+            const dropdown = document.getElementById(`status-dropdown-${projectId}`);
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (isVisible) {
+                dropdown.style.display = 'none';
+                openDropdownId = null;
+            } else {
+                dropdown.style.display = 'block';
+                openDropdownId = projectId;
+            }
+        }
+
+        async function setStatus(projectId, status) {
+            try {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('status', status || '');
+                
+                const response = await fetch(`/update-status/${projectId}/`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.reload();
+                } else {
+                    alert(result.error || 'Failed to update status');
+                }
+            } catch (error) {
+                alert('Error updating status');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (openDropdownId && !e.target.closest('.status-dropdown') && !e.target.closest('.badge')) {
+                const dropdown = document.getElementById(`status-dropdown-${openDropdownId}`);
+                if (dropdown) {
+                    dropdown.style.display = 'none';
+                    openDropdownId = null;
+                }
+            }
+        });
 
         // Drag and drop functionality
         const projectList = document.getElementById('project-list');

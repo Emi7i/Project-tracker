@@ -7,12 +7,20 @@ class Project(models.Model):
         ('corporate', 'Corporate'),
         ('personal', 'Personal'),
     ]
+    
+    STATUS_CHOICES = [
+        ('ongoing', 'Ongoing'),
+        ('ontrack', 'On Track'),
+        ('atrisk', 'At Risk'),
+        ('overdue', 'Overdue'),
+    ]
 
     name = models.CharField(max_length=200)
     project_type = models.CharField(max_length=20, choices=PROJECT_TYPES, default='corporate')
     due_date = models.DateField(null=True, blank=True)
     next_action = models.CharField(max_length=500, blank=True)
     order = models.IntegerField(default=0)
+    manual_status = models.CharField(max_length=20, choices=STATUS_CHOICES, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -21,6 +29,9 @@ class Project(models.Model):
 
     @property
     def status(self):
+        if self.manual_status:
+            return self.manual_status
+            
         if not self.due_date:
             return 'ongoing'
         

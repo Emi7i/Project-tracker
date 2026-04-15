@@ -105,3 +105,15 @@ def reorder_projects(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def update_project_status(request, pk):
+    if request.method == 'POST':
+        project = get_object_or_404(Project, pk=pk)
+        status = request.POST.get('status', '')
+        project.manual_status = status if status else None
+        project.save()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
