@@ -192,6 +192,12 @@ async function swapTypeOrder() {
 const projectList = document.getElementById('project-list');
 
 projectList.addEventListener('dragstart', function(e) {
+    // Prevent dragging when interacting with editable fields
+    if (e.target.closest('[contenteditable="true"]') || e.target.closest('input') || e.target.closest('select')) {
+        e.preventDefault();
+        return;
+    }
+
     const card = e.target.closest('.proj-card');
     if (card) {
         draggedItem = card;
@@ -259,6 +265,11 @@ function toggleForm() {
     document.getElementById('f-type').value = 'corporate';
     document.getElementById('save-btn').textContent = 'save project';
     document.getElementById('date-hint').textContent = '(required for corporate)';
+    
+    // Reset next action field to text input for new projects
+    document.getElementById('f-action').style.display = 'block';
+    document.getElementById('f-task-select').style.display = 'none';
+    
     const w = document.getElementById('form-wrap');
     w.style.display = w.style.display === 'none' ? 'block' : 'none';
     if (w.style.display === 'block') {
@@ -307,7 +318,6 @@ document.getElementById('project-form').addEventListener('submit', async functio
 async function editProject(id) {
     editingId = id;
     
-    // Fetch project data
     try {
         const response = await fetch('/api/project/' + id + '/');
         const project = await response.json();
@@ -315,7 +325,25 @@ async function editProject(id) {
         document.getElementById('f-name').value = project.name;
         document.getElementById('f-type').value = project.project_type;
         document.getElementById('f-date').value = project.due_date || '';
-        document.getElementById('f-action').value = project.next_action || '';
+        
+        // Setup Task Dropdown for editing
+        const select = document.getElementById('f-task-select');
+        const input = document.getElementById('f-action');
+        
+        select.innerHTML = '<option value="">(no next task)</option>';
+        if (project.all_tasks) {
+            project.all_tasks.forEach(task => {
+                const opt = document.createElement('option');
+                opt.value = task.id;
+                opt.textContent = task.name;
+                if (task.id == project.next_task_id) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+        
+        input.style.display = 'none';
+        select.style.display = 'block';
+        
         document.getElementById('save-btn').textContent = 'update project';
         document.getElementById('date-hint').textContent = project.project_type === 'corporate' ? '(required)' : '(optional)';
         document.getElementById('form-wrap').style.display = 'block';

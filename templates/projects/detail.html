@@ -1,0 +1,163 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.name }} - Project Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body class="detail-page" style="background-color: #f9fafb; padding: 2rem 1rem;">
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" id="global-csrf-token">
+
+    <!-- Status Management Modal -->
+    <div id="status-modal" class="modal-overlay">
+        <div class="modal">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 600;">Manage Statuses</h2>
+                <button onclick="closeStatusModal()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: #6b7280;">&times;</button>
+            </div>
+            <div id="status-list">
+                {% for s in statuses %}
+                <div class="status-manage-item" data-status-id="{{ s.id }}">
+                    <input type="color" value="{{ s.color }}" onchange="updateStatus({{ s.id }}, 'color', this.value)" style="border: none; width: 30px; height: 30px; cursor: pointer; background: transparent;">
+                    <input type="text" value="{{ s.name }}" onblur="updateStatus({{ s.id }}, 'name', this.value)" style="flex: 1; border: 1px solid #e5e7eb; padding: 4px 8px; border-radius: 4px;">
+                    <button onclick="deleteStatus({{ s.id }})" class="icon-btn-small icon-delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                {% endfor %}
+            </div>
+            <button onclick="addNewStatus()" style="width: 100%; padding: 0.75rem; background: #f3f4f6; border: 1px dashed #d1d5db; border-radius: 8px; color: #4b5563; font-weight: 500; cursor: pointer; margin-top: 1rem;">
+                <i class="fa-solid fa-plus"></i> Add New Status
+            </button>
+        </div>
+    </div>
+
+    <main style="max-width: 1100px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e5e7eb; overflow: hidden;">
+        
+        <!-- Header -->
+        <header style="padding: 1.5rem; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button onclick="window.location.href='{% url 'project_list' %}'" style="background: transparent; border: none; cursor: pointer; color: #6b7280; font-size: 1.25rem;">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="editable-container" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <h1 id="project-name-heading" class="editable-name" contenteditable="false" onblur="updateProjectName(this.innerText)" style="font-size: 1.5rem; font-weight: 600; color: #111827; margin: 0; padding: 2px 4px;">{{ project.name }}</h1>
+                    <div class="action-icons">
+                        <i class="fa-solid fa-pen icon-btn-small" onclick="selectAndFocus('project-name-heading')"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="header-btn" onclick="openStatusModal()">Edit Status</button>
+                <div class="header-btn" style="display: flex; align-items: center; gap: 0.5rem; position: relative;">
+                    <i class="fa-solid fa-sort"></i>
+                    <select onchange="updateProjectSort(this.value)" style="background: transparent; border: none; color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit; cursor: pointer; outline: none;">
+                        <option value="custom">Custom (Manual)</option>
+                        <option value="deadline">Deadline</option>
+                        <option value="status">Status</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Sections -->
+        <div style="padding: 1.5rem;" id="sections-container">
+            {% for section in sections %}
+            <section style="margin-bottom: 3rem;" data-section-id="{{ section.id }}" id="section-{{ section.id }}" draggable="true" class="project-section">
+                <div class="table-grid section-header-container" style="border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="toggleSection({{ section.id }})">
+                        <div class="drag-icon-container">
+                            <i class="fa-solid fa-grip-vertical"></i>
+                        </div>
+                        <div class="editable-container" style="display: flex; align-items: center; gap: 0.5rem;" onclick="event.stopPropagation()">
+                            <h2 id="section-name-{{ section.id }}" class="editable-name" contenteditable="false" onblur="updateSectionName({{ section.id }}, this.innerText)" style="font-size: 1.25rem; font-weight: 600; margin: 0; padding: 2px 4px;">{{ section.name }}</h2>
+                            <div class="action-icons">
+                                <i class="fa-solid fa-pen icon-btn-small" onclick="selectAndFocus('section-name-{{ section.id }}')"></i>
+                                <i class="fa-solid fa-trash icon-btn-small icon-delete" onclick="deleteSection({{ section.id }})"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Status</span>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Deadline</span>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Time tracked</span>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Waiting On</span>
+                </div>
+
+                <div class="section-content" id="section-content-{{ section.id }}">
+                    <div class="tasks-container" id="tasks-container-{{ section.id }}" data-section-id="{{ section.id }}">
+                        {% for task in section.sorted_tasks %}
+                        <div class="table-grid task-row" data-task-id="{{ task.id }}" id="task-{{ task.id }}" draggable="true" style="padding: 0.75rem 0.5rem; border-radius: 8px; cursor: grab;">
+                            <div class="editable-container" style="display: flex; align-items: center; gap: 0.5rem;" onclick="event.stopPropagation()">
+                                <i class="fa-solid fa-arrow-right next-task-arrow {% if project.next_task_id == task.id %}is-next{% endif %}" onclick="setNextTask({{ task.id }})" title="Set as next task"></i>
+                                <span id="task-name-{{ task.id }}" class="editable-name" contenteditable="false" onblur="updateTask({{ task.id }}, 'name', this.innerText)" style="color: #374151; font-weight: 500; flex: 1; padding: 2px 4px;">{{ task.name }}</span>
+                                <div class="action-icons">
+                                    <i class="fa-solid fa-pen icon-btn-small" onclick="selectAndFocus('task-name-{{ task.id }}')"></i>
+                                    <i class="fa-solid fa-trash icon-btn-small icon-delete" onclick="deleteTask({{ task.id }})"></i>
+                                </div>
+                            </div>
+                            <div class="click-to-edit" onclick="enterEditMode(this)">
+                                <div class="display-text status-pill" style="background-color: {{ task.status_obj.color|default:'#9ca3af' }}; color: {{ task.status_obj.text_color|default:'#111827' }};">
+                                    {{ task.status_obj.name|default:'None' }} <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; margin-left: 0.25rem;"></i>
+                                </div>
+                                <select class="edit-input" onchange="updateTask({{ task.id }}, 'status', this.value, this.parentElement); exitEditMode(this.parentElement)" onblur="exitEditMode(this.parentElement)">
+                                    {% for s in statuses %}
+                                        <option value="{{ s.id }}" data-color="{{ s.color }}" data-text-color="{{ s.text_color }}" {% if task.status_obj_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="click-to-edit" onclick="enterEditMode(this)">
+                                <span class="display-text" style="font-size: 0.875rem; color: #4b5563;">{{ task.due_date|date:'d. m. Y.'|default:'—' }}</span>
+                                <input type="date" class="edit-input" value="{{ task.due_date|date:'Y-m-d' }}" onchange="updateTask({{ task.id }}, 'due_date', this.value, this.parentElement); exitEditMode(this.parentElement)" onblur="exitEditMode(this.parentElement)">
+                            </div>
+                            <div class="click-to-edit" onclick="enterEditMode(this)">
+                                <span class="display-text" style="font-size: 0.875rem; color: #4b5563; font-family: monospace;">{{ task.time_tracked }}h</span>
+                                <input type="number" step="0.5" class="edit-input" value="{{ task.time_tracked }}" onchange="updateTask({{ task.id }}, 'time_tracked', this.value, this.parentElement); exitEditMode(this.parentElement)" onblur="exitEditMode(this.parentElement)">
+                            </div>
+                            <div class="click-to-edit" onclick="enterEditMode(this)">
+                                <span class="display-text" style="font-size: 0.875rem; color: {% if task.waiting_on %}#2563eb{% else %}#9ca3af{% endif %}; font-weight: {% if task.waiting_on %}500{% else %}400{% endif %};">
+                                    {% if task.waiting_on %}{{ task.waiting_on.name }}{% else %}<i class="fa-solid fa-plus-circle" style="font-size: 0.75rem;"></i> Add{% endif %}
+                                </span>
+                                <select class="edit-input" onchange="updateTask({{ task.id }}, 'waiting_on', this.value, this.parentElement); exitEditMode(this.parentElement)" onblur="exitEditMode(this.parentElement)">
+                                    <option value="">None</option>
+                                    {% for t in all_tasks %}
+                                        {% if t.id != task.id %}
+                                        <option value="{{ t.id }}" {% if task.waiting_on_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div style="margin-top: 0.5rem;">
+                        <button onclick="addNewTask({{ section.id }})" style="color: #6b7280; font-size: 0.875rem; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem;">
+                            <i class="fa-solid fa-plus"></i> Add task
+                        </button>
+                    </div>
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+
+        <div style="padding: 0 1.5rem 2rem 1.5rem;">
+            <div style="border-top: 1px dashed #d1d5db; padding-top: 1rem;">
+                <button onclick="addNewSection()" style="color: #4b5563; font-weight: 500; background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-plus-circle"></i> Add new section
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="background-color: #f9fafb; padding: 1rem; border-top: 1px solid #f3f4f6; text-align: center;">
+            <p id="motivational-footer" style="font-size: 0.875rem; color: #6b7280; font-weight: 500;"></p>
+        </footer>
+    </main>
+
+    <script>
+        const projectId = "{{ project.id }}";
+    </script>
+    <script src="{% static 'detail.js' %}"></script>
+</body>
+</html>

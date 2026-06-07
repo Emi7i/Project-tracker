@@ -80,9 +80,10 @@
                         <input type="date" id="f-date" name="due_date" />
                     </div>
                 </div>
-                <div class="form-row">
+                <div class="form-row" id="next-action-container">
                     <label for="f-action">next action</label>
                     <input type="text" id="f-action" name="next_action" placeholder="e.g. Send first draft to client" />
+                    <select id="f-task-select" name="next_task_id" style="display: none;"></select>
                 </div>
                 <div class="form-btns">
                     <button type="button" onclick="cancelForm()" style="font-size: 13px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: transparent; color: var(--color-text-secondary); cursor: pointer">cancel</button>
@@ -100,14 +101,14 @@
                         <div style="font-size: 12px; font-weight: 500; color: var(--color-text-secondary); margin: 1.5rem 0 0.5rem 0; text-transform: uppercase; letter-spacing: 0.5px;">{{ group.group_label }}</div>
                     {% endif %}
                     {% for project in group.projects %}
-                        <div class="proj-card" data-id="{{ project.id }}" draggable="true">
+                        <div class="proj-card" data-id="{{ project.id }}" draggable="true" onclick="window.location.href='/project/{{ project.id }}/'">
                             <div class="drag-handle" onclick="event.stopPropagation()">
                                 <i class="fa-solid fa-grip-vertical"></i>
                             </div>
                             <span class="proj-dot" style="background: {{ project.dot_color }}"></span>
                             <div class="proj-body">
                                 <div class="proj-name">{{ project.name }}</div>
-                                <div class="proj-action">→ {{ project.next_action|default:"no next action set" }}</div>
+                                <div class="proj-action">→ {{ project.next_task.name|default:"no next action set" }}</div>
                                 <div class="proj-footer" style="position: relative;">
                                     {% include "projects/dropdown_component.html" with dropdown_prefix="status-dropdown" badge_class=project.status badge_label=project.status_label project_id=project.id options=status_options update_url="/update-status/" %}
                                     {% include "projects/dropdown_component.html" with dropdown_prefix="priority-dropdown" badge_class=project.priority badge_label=project.get_priority_display project_id=project.id options=priority_options update_url="/update-priority/" %}
@@ -117,8 +118,8 @@
                                 </div>
                             </div>
                             <div class="proj-actions">
-                                <button class="icon-btn" onclick="editProject({{ project.id }})" title="edit">✎</button>
-                                <button class="icon-btn" onclick="deleteProject({{ project.id }})" title="remove">✕</button>
+                                <button class="icon-btn" onclick="event.stopPropagation(); editProject({{ project.id }})" title="edit">✎</button>
+                                <button class="icon-btn" onclick="event.stopPropagation(); deleteProject({{ project.id }})" title="remove">✕</button>
                             </div>
                         </div>
                     {% endfor %}
