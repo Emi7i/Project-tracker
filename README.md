@@ -1,9 +1,8 @@
 # Project Tracker
 
-A Django-based project tracker application for managing personal and corporate projects with next actions.
+A Django-based project tracker application for managing personal and corporate projects with tasks.
 
-> ### NOTICE! This is a vibe-coded project created with SWE-1.6 from Cognition. 
-> Link: https://cognition.ai/blog/swe-1-6 <br>
+> ### NOTICE! This is a vibe-coded project created with SWE-1.6 from Cognition and Gemini from Google.
 > 
 > You are free to contribute to this project, fork and use for personal or commercial purposes.
 
