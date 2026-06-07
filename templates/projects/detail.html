@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ project.name }} - Project Tracker</title>
+    <link rel="icon" type="image/png" href="{% static 'logo.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
@@ -36,10 +37,13 @@
         
         <!-- Header -->
         <header style="padding: 1.5rem; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <button onclick="window.location.href='{% url 'project_list' %}'" style="background: transparent; border: none; cursor: pointer; color: #6b7280; font-size: 1.25rem;">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="{% static 'logo.png' %}" alt="Logo" style="height: 32px; cursor: pointer;" onclick="window.location.href='{% url 'project_list' %}'">
+                    <button onclick="window.location.href='{% url 'project_list' %}'" style="background: transparent; border: none; cursor: pointer; color: #6b7280; font-size: 1.1rem; display: flex; align-items: center;">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                </div>
                 <div class="editable-container" style="display: flex; align-items: center; gap: 0.75rem;">
                     <h1 id="project-name-heading" class="editable-name" contenteditable="false" onblur="updateProjectName(this.innerText)" style="font-size: 1.5rem; font-weight: 600; color: #111827; margin: 0; padding: 2px 4px;">{{ project.name }}</h1>
                     <div class="action-icons">

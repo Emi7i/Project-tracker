@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Tracker</title>
+    <link rel="icon" type="image/png" href="{% static 'logo.png' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
@@ -12,6 +13,11 @@
     <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" id="global-csrf-token">
 
     <div id="app" class="container">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+            <img src="{% static 'logo.png' %}" alt="Logo" style="height: 40px;">
+            <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--color-text-primary);">Project Tracker</h1>
+        </div>
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px">
             <div style="display: flex; gap: 14px; align-items: center">
                 <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--color-text-secondary)">
