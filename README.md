@@ -1,6 +1,10 @@
-# Project Tracker
+<div align="center">
+  <img src="static/logo.png" width="100" height="100" alt="Project Tracker Logo">
+  <h1>Project Tracker</h1>
+  <p><i>A Django-based project tracker application for managing personal and corporate projects with tasks.</i></p>
+</div>
 
-A Django-based project tracker application for managing personal and corporate projects with tasks.
+<br>
 
 > ### NOTICE! This is a vibe-coded project created with SWE-1.6 from Cognition and Gemini from Google.
 > 
@@ -9,7 +13,7 @@ A Django-based project tracker application for managing personal and corporate p
 ## UI
 <img src="ui_photos/img2.png" width="500" height="350">
 <img src="ui_photos/img1.png" width="500" height="350">
-<img src="ui_photos/img.png" width="500">
+<img src="ui_photos/img_tasks.png" width="500">
 
 
 ## Installation
