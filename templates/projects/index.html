@@ -39,9 +39,9 @@
                         <span id="sort-label">{{ current_sort_label }}</span>
                         <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
                     </span>
-                    <div id="sort-dropdown" class="status-dropdown" style="display: none;">
+                    <div id="sort-dropdown" class="status-dropdown" style="display: none;" onclick="event.stopPropagation()">
                         {% for option_value, option_label in sort_options %}
-                            <div class="status-dropdown-item" onclick="setSort('{{ option_value }}', '{{ option_label }}')">{{ option_label }}</div>
+                            <div class="status-dropdown-item" onclick="setSort('{{ option_value }}', '{{ option_label }}', event)">{{ option_label }}</div>
                         {% endfor %}
                     </div>
                 </div>
@@ -51,9 +51,9 @@
                         <span id="group-label">{{ current_group_label }}</span>
                         <i class="fa-solid fa-chevron-down" style="font-size: 10px;"></i>
                     </span>
-                    <div id="group-dropdown" class="status-dropdown" style="display: none;">
+                    <div id="group-dropdown" class="status-dropdown" style="display: none;" onclick="event.stopPropagation()">
                         {% for option_value, option_label in group_options %}
-                            <div class="status-dropdown-item" onclick="setGroup('{{ option_value }}', '{{ option_label }}')">{{ option_label }}</div>
+                            <div class="status-dropdown-item" onclick="setGroup('{{ option_value }}', '{{ option_label }}', event)">{{ option_label }}</div>
                         {% endfor %}
                     </div>
                 </div>

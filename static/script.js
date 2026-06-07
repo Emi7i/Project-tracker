@@ -24,7 +24,8 @@ function toggleDropdown(dropdownId, projectId, event) {
     }
 }
 
-async function updateDropdown(dropdownId, projectId, value, updateUrl) {
+async function updateDropdown(dropdownId, projectId, value, updateUrl, event) {
+    if (event) event.stopPropagation();
     try {
         const formData = new FormData();
         formData.append('csrfmiddlewaretoken', document.getElementById('global-csrf-token').value);
@@ -88,7 +89,8 @@ function toggleSortDropdown(event) {
     }
 }
 
-async function setSort(sortValue, sortLabel) {
+async function setSort(sortValue, sortLabel, event) {
+    if (event) event.stopPropagation();
     document.getElementById('sort-label').textContent = sortLabel;
     document.getElementById('sort-dropdown').style.display = 'none';
     sortDropdownOpen = false;
@@ -139,7 +141,8 @@ function toggleGroupDropdown(event) {
     }
 }
 
-async function setGroup(groupValue, groupLabel) {
+async function setGroup(groupValue, groupLabel, event) {
+    if (event) event.stopPropagation();
     document.getElementById('group-label').textContent = groupLabel;
     document.getElementById('group-dropdown').style.display = 'none';
     groupDropdownOpen = false;

@@ -1,7 +1,7 @@
 {% load static %}
 <span class="badge badge-{{ badge_class }}" onclick="toggleDropdown('{{ dropdown_prefix }}-{{ project_id }}', {{ project_id }}, event)">{{ badge_label }}</span>
-<div id="{{ dropdown_prefix }}-{{ project_id }}" class="status-dropdown" style="display: none;">
+<div id="{{ dropdown_prefix }}-{{ project_id }}" class="status-dropdown" style="display: none;" onclick="event.stopPropagation()">
     {% for option_value, option_label in options %}
-        <div class="status-dropdown-item" onclick="updateDropdown('{{ dropdown_prefix }}-{{ project_id }}', {{ project_id }}, {% if option_value %}'{{ option_value }}'{% else %}null{% endif %}, '{{ update_url }}')"{% if forloop.last %} style="border-top: 1px solid var(--color-border-tertiary); margin-top: 4px; padding-top: 8px;"{% endif %}>{{ option_label }}</div>
+        <div class="status-dropdown-item" onclick="updateDropdown('{{ dropdown_prefix }}-{{ project_id }}', {{ project_id }}, {% if option_value %}'{{ option_value }}'{% else %}null{% endif %}, '{{ update_url }}', event)"{% if forloop.last %} style="border-top: 1px solid var(--color-border-tertiary); margin-top: 4px; padding-top: 8px;"{% endif %}>{{ option_label }}</div>
     {% endfor %}
 </div>
