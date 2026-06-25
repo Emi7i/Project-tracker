@@ -21,7 +21,7 @@
 1. Clone the repository:
    ```bash
    git clone https://github.com/Emi7i/Project-tracker
-   cd "Task App"
+   cd Project-tracker
    
 2. Create a virtual environment:
    ```bash
