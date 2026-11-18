@@ -363,3 +363,6 @@ body {
     border-radius: 8px;
     background: #f9fafb;
 }
+
+/* Keep empty sections droppable when dragging tasks */
+.tasks-container { min-height: 48px; }

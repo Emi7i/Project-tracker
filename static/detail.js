@@ -270,7 +270,9 @@ document.addEventListener('dragover', (e) => {
     if (!draggedItem) return;
 
     if (dragType === 'task') {
-        const container = e.target.closest('.tasks-container');
+        // Accept drops anywhere over a section, so empty sections work too
+        const container = e.target.closest('.tasks-container')
+            || e.target.closest('.project-section')?.querySelector('.tasks-container');
         if (!container) return;
         const afterElement = getDragAfterElement(container, e.clientY, '.task-row');
         if (afterElement == null) container.appendChild(draggedItem);
