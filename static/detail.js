@@ -292,7 +292,8 @@ document.addEventListener('drop', async (e) => {
         const tasks = Array.from(container.querySelectorAll('.task-row'));
         const orderData = tasks.map((task, index) => ({
             id: task.getAttribute('data-task-id'),
-            order: index
+            order: index,
+            section_id: container.getAttribute('data-section-id')
         }));
         await apiPost('/api/task/reorder/', { order_data: JSON.stringify(orderData) });
     } else if (dragType === 'section') {

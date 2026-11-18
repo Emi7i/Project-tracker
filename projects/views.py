@@ -450,6 +450,8 @@ def reorder_tasks_api(request):
             for item in order_data:
                 task = get_object_or_404(Task, pk=item['id'])
                 task.order = item['order']
+                if item.get('section_id'):
+                    task.section_id = int(item['section_id'])
                 task.save()
             return JsonResponse({'success': True})
         except Exception as e:
